@@ -20,7 +20,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 COMPONENTS Widgets Core Gui REQUIRED)
+find_package(Qt5 COMPONENTS Widgets Core Gui Xml REQUIRED)
 if(Qt5_FOUND)
     message("Qt5_FOUND")
 endif()
@@ -43,4 +43,4 @@ file(GLOB sources CONFIGURE_DEPENDS res/res.qrc src/*.cpp src/*.h)
 
 target_sources(${PROJECT_NAME} PUBLIC ${sources})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui)
+target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Xml z)

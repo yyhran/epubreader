@@ -1,4 +1,6 @@
 #include <iostream>
+#include <QApplication>
+#include "unzip.h"
 
 int main(int argc, char** argv)
 {
