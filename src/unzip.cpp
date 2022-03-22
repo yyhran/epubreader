@@ -176,11 +176,11 @@ auto UnZipStream::fileByte(const QString& fileName) -> QByteArray
     uncompressedSize = readUInt(metaheader.h.uncompressedSize);
     if(uncompressedSize < 1) return QByteArray();
 
-    int start{readUInt(metaheader.h.offsetLocalHeader)};
+    int start{static_cast<int>(readUInt(metaheader.h.offsetLocalHeader))};
     this->device()->seek(start);
     LocalFileHeader lh;
     this->device()->read(reinterpret_cast<char*>(&lh), sizeof(LocalFileHeader));
-    uint skip{readUShort(lh.fileNameLength) + readUShort(lh.extraFieldLength)};
+    uint skip{static_cast<uint>(readUShort(lh.fileNameLength) + readUShort(lh.extraFieldLength))};
     this->device()->seek(this->device()->pos() + skip);
     int compressionMethod{readUShort(lh.compressionMethod)};
     QByteArray compressed = this->device()->read(compressedSize);
@@ -201,7 +201,7 @@ auto UnZipStream::fileByte(const QString& fileName) -> QByteArray
         // real unzip part file
         compressed.truncate(compressedSize);
         QByteArray decompressChunk;
-        ulong len{qMax(uncompressedSize, 1)};
+        ulong len{static_cast<ulong>(qMax(uncompressedSize, 1))};
         int res{0};
         do
         {
@@ -254,7 +254,7 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
     EndOfDirectory eod;
     while(-1 == startOfDirectory)
     {
-        int pos{this->device()->size() - sizeof(EndOfDirectory) - i};
+        int pos{static_cast<int>(this->device()->size() - sizeof(EndOfDirectory) - i)};
         if(pos < 0 || i > 65535)
         {
             qWarning() << "UnZip: end of directory not found!";
@@ -281,7 +281,7 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
     for(i = 0; i < numDirEntries; ++i)
     {
         FileHeader header;
-        int read{this->device()->read(reinterpret_cast<char*>(&header.h), sizeof(GentralFileHeader))};
+        int read{static_cast<int>(this->device()->read(reinterpret_cast<char*>(&header.h), sizeof(GentralFileHeader)))};
         if(read < static_cast<int>(sizeof(GentralFileHeader)))
         {
             qWarning() << "UnZip: Failed to read complete header, index may be incomplete!";
