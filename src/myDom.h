@@ -50,34 +50,34 @@ public:
     QmyDom(bool heading = true);
     ~QmyDom() { }
 
-    auto CleanTagAsText(QString body) -> QString;
-    auto CleanTagAsHTML(QString body) -> QString;
-    auto GetDecode() -> QString { return this->decode; }
-    auto SetSelf(const QString fullFileName) -> bool;
+    auto cleanTagAsText(QString body) -> QString;
+    auto cleanTagAsHTML(QString body) -> QString;
+    auto getDecode() -> QString { return this->_decode; }
+    auto setSelf(const QString fullFileName) -> bool;
     auto saveAsHtmlClean(const QString fullFileName) -> bool;
-    auto SetStream(const QString stream) -> bool;
+    auto setStream(const QString stream) -> bool;
     auto insertFragmentorFile(QString fragment) -> QDomElement; // insert xml file or tag fragment
     auto insertFragment(QDomElement e, QString fragment) -> void;
     auto insertFullFragment(QDomElement e, QString fragment) -> void;
     auto insertElemetFrag(QDomElement e, const QDomNodeList ex, QString newname) -> void;
-    auto StringToXML(QString t) -> QString; // xml escape chars
-    auto SetStreamFile(const QString fullFileName) -> void; // set a work file
+    auto stringToXML(QString t) -> QString; // xml escape chars
+    auto setStreamFile(const QString fullFileName) -> void; // set a work file
     auto saveXML(const QString fullFileName) -> bool; // save to external file
     auto saveXML() -> bool; // save to work file if exist
-    auto Print() -> void; // print to console
-    auto GetAtt(QDomElement e, QString name) -> QString; // get attribute value from element
+    auto print() -> void; // print to console
+    auto getAtt(QDomElement e, QString name) -> QString; // get attribute value from element
     auto root() -> QDomElement;
-    auto FilterAttribute(QDomElement element, QString attribute) -> QString;
+    auto filterAttribute(QDomElement element, QString attribute) -> QString;
     auto insertTagValue(const QString name, QString value);
     auto saveStream(const QString fullFileName, QString xml) -> bool;
     auto isFile(QString fullFileName) -> bool;
     auto xmlUnlink(QString fullFileName) -> bool;
-    auto ErrorDom() -> QDomElement; // on error return </error> tag
+    auto errorDom() -> QDomElement; // on error return </error> tag
 
-public:
-    QString decode;
-    QDomProcessingInstruction header;
-    QString streamOnFile;
+private:
+    QString _decode;
+    QDomProcessingInstruction _header;
+    QString _streamOnFile;
 };
 
 Q_DECLARE_METATYPE(QmyDom);

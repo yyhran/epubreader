@@ -2,14 +2,14 @@
 
 
 QmyDom::QmyDom(bool heading)
-    :decode("utf-8") // save to utf-8
+    :_decode("utf-8") // save to utf-8
 {
-    header = QDomDocument::createProcessingInstruction("xml",
-                QString("version=\"%1\" encoding=\"%1\"").arg(decode));
-    if(heading) this->appendChild(header);
+    this->_header = QDomDocument::createProcessingInstruction("xml",
+                QString("version=\"%1\" encoding=\"%1\"").arg(this->_decode));
+    if(heading) this->appendChild(this->_header);
 }
 
-auto QmyDom::CleanTagAsText(QString body) -> QString
+auto QmyDom::cleanTagAsText(QString body) -> QString
 {
     QTextDocument* xhtmldoc = new QTextDocument();
     xhtmldoc->setHtml(body);
@@ -20,14 +20,14 @@ auto QmyDom::CleanTagAsText(QString body) -> QString
     return wbody.trimmed();
 }
 
-auto QmyDom::CleanTagAsHTML(QString body) -> QString
+auto QmyDom::cleanTagAsHTML(QString body) -> QString
 {
     QTextDocument* xhtmldoc = new QTextDocument();
     xhtmldoc->setHtml(body);
     return xhtmldoc->toHtml("utf_8");
 }
 
-auto QmyDom::SetSelf(const QString fullFileName) -> bool
+auto QmyDom::setSelf(const QString fullFileName) -> bool
 {
     QString errorStr;
     int errorColumn{0};
@@ -40,10 +40,10 @@ auto QmyDom::saveAsHtmlClean(const QString fullFileName) -> bool
 {
     this->xmlUnlink(fullFileName);
     const QString xmlxx = QmyDom::toString();
-    QString xcc = this->CleanTagAsHTML(xmlxx);
+    QString xcc = this->cleanTagAsHTML(xmlxx);
 
     QTextCodec* setCurrentCodec;
-    if(this->decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf-8
+    if(this->_decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf-8
     else setCurrentCodec = QTextCodec::codecForMib(4); // latin iso
 
     QFile f(fullFileName);
@@ -58,7 +58,7 @@ auto QmyDom::saveAsHtmlClean(const QString fullFileName) -> bool
     return false;
 }
 
-auto QmyDom::SetStream(const QString stream) -> bool
+auto QmyDom::setStream(const QString stream) -> bool
 {
     QString errorStr;
     int errorLine{0};
@@ -87,31 +87,31 @@ auto QmyDom::insertFragmentorFile(QString fragment) -> QDomElement // insert xml
         else
         {
             extFile.close();
-            return this->ErrorDom();
+            return this->errorDom();
         }
     }
     else
     {
         QTextCodec* setCurrentCodec;
-        if(this->decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf8
+        if(this->_decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf8
         else setCurrentCodec = QTextCodec::codecForMib(4); // latin iso
 
-        if(this->streamOnFile.size() > 0)
+        if(this->_streamOnFile.size() > 0)
         {
-            QFile f(this->streamOnFile);
+            QFile f(this->_streamOnFile);
             if(f.open(QFile::WriteOnly | QFile::Text))
             {
                 QTextStream sw(&f);
                 sw.setCodec(setCurrentCodec);
                 sw << QString("<?xml version=\"1.0\"?>\n<dummyroot>%1</dummyroot>").arg(fragment);
                 f.close();
-                if(this->isFile(this->streamOnFile))
+                if(this->isFile(this->_streamOnFile))
                 {
-                    return this->insertFragmentorFile(this->streamOnFile);
+                    return this->insertFragmentorFile(this->_streamOnFile);
                 }
             }
         }
-        return this->ErrorDom();
+        return this->errorDom();
     }
 }
 
@@ -175,7 +175,7 @@ auto QmyDom::insertElemetFrag(QDomElement e, const QDomNodeList ex, QString newn
     }
     else qDebug() << "### no fragment " << e.tagName();
 }
-auto QmyDom::StringToXML(QString t) -> QString // xml escape chars
+auto QmyDom::stringToXML(QString t) -> QString // xml escape chars
 {
     QString text = t;
     text.replace("&", "&amp;");
@@ -188,9 +188,9 @@ auto QmyDom::StringToXML(QString t) -> QString // xml escape chars
     return text;
 }
 
-auto QmyDom::SetStreamFile(const QString fullFileName) -> void // set a work file
+auto QmyDom::setStreamFile(const QString fullFileName) -> void // set a work file
 {
-    this->streamOnFile = fullFileName;
+    this->_streamOnFile = fullFileName;
 }
 
 auto QmyDom::saveXML(const QString fullFileName) -> bool // save to external file
@@ -198,7 +198,7 @@ auto QmyDom::saveXML(const QString fullFileName) -> bool // save to external fil
     this->xmlUnlink(fullFileName);
 
     QTextCodec* setCurrentCodec;
-    if(this->decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf-8
+    if(this->_decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf-8
     else setCurrentCodec = QTextCodec::codecForMib(4); // latin iso
 
     QFile f(fullFileName);
@@ -215,17 +215,17 @@ auto QmyDom::saveXML(const QString fullFileName) -> bool // save to external fil
 
 auto QmyDom::saveXML() -> bool // save to work file if exist
 {
-    if(this->isFile(this->streamOnFile)) return this->saveXML(streamOnFile);
+    if(this->isFile(this->_streamOnFile)) return this->saveXML(this->_streamOnFile);
     return false;
 }
 
-auto QmyDom::Print() -> void // print to console
+auto QmyDom::print() -> void // print to console
 {
     QTextStream out(stdout);
     out << QmyDom::toString();
 }
 
-auto QmyDom::GetAtt(QDomElement e, QString name) -> QString // get attribute value from element
+auto QmyDom::getAtt(QDomElement e, QString name) -> QString // get attribute value from element
 {
     QString textValue{""};
     QString errorValue{""};
@@ -241,7 +241,7 @@ auto QmyDom::root() -> QDomElement
     return root;
 }
 
-auto QmyDom::FilterAttribute(QDomElement element, QString attribute) -> QString
+auto QmyDom::filterAttribute(QDomElement element, QString attribute) -> QString
 {
     QString base{"error"};
     QDomNamedNodeMap attList = element.attributes();
@@ -271,7 +271,7 @@ auto QmyDom::insertTagValue(const QString name, QString value)
 auto QmyDom::saveStream(const QString fullFileName, QString xml) -> bool
 {
     QTextCodec* setCurrentCodec;
-    if(this->decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf-8
+    if(this->_decode == "utf-8") setCurrentCodec = QTextCodec::codecForMib(106); // utf-8
     else setCurrentCodec = QTextCodec::codecForMib(4); // latin iso
 
     QFile f(fullFileName);
@@ -302,7 +302,7 @@ auto QmyDom::xmlUnlink(QString fullFileName) -> bool
     return false;
 }
 
-auto QmyDom::ErrorDom() -> QDomElement // on error return </error> tag
+auto QmyDom::errorDom() -> QDomElement // on error return </error> tag
 {
     QDomElement errorElement = QDomDocument::createElement("error");
     return errorElement;
