@@ -375,6 +375,7 @@ auto Document::getPageKeyMd843(const int idmd, EpubToc& item) -> void
         }
     }
 }
+
 auto Document::getMenuOrderID(const int x, EpubToc& item) -> void
 {
     for(auto&& fox : this->_menuItem)
@@ -427,6 +428,7 @@ auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
         this->setEpubError(QString("unable to get id from page %1").arg(ref));
     }
 }
+
 auto Document::metaReader() -> bool
 {
     EPUBDEBUG() << "meta reader only read & follow:" << METAINFOCONTAINERFILE << " line:" << __LINE__;
@@ -580,7 +582,7 @@ auto Document::metaReader() -> bool
     this->removeFromRam(this->_nextFileToReadCrono);
     if(this->_coverPager.isEmpty())
     {
-        this->setEpubError(QString("Coverpage or StartPage variable is not full! from file %1").arg(NEXTFILETOREADCRONO));
+        this->setEpubError(QString("Coverpage or StartPage variable is not full! from file %1").arg(this->_nextFileToReadCrono));
     }
     else
     {
@@ -596,21 +598,242 @@ auto Document::metaReader() -> bool
     }
     return xvalid;
 }
+
 auto Document::cacheFinder(const QString findFile) -> bool
 {
+    if(this->_showSynrorun)
+    {
+        EPUBDEBUG() << "CacheFinder:" << findFile << " .";
+    }
 
+    bool havigness = false;
+    for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
+    {
+        if(it.key() == findFile)
+        {
+            havigness = true;
+            break;
+        }
+    }
+    return havigness;
 }
+
 auto Document::readMenu(const QDomElement& element) -> bool
 {
+    QDomElement child = element.firstChildElement();
 
+    while(not child.isNull())
+    {
+        if(child.tagName() == QLatin1String("navPoint"))
+        {
+            this->_flyID = child.attribute("id");
+            this->_flyOrder = child.attribute("playOrder");
+            this->readMenu(child);
+        }
+        else if(child.tagName() == QLatin1String("content"))
+        {
+            if(this->_useBaseRef)
+            {
+                this->_flyUrl = this->_baseRefDir + child.attribute("src");
+            }
+            else
+            {
+                this->_flyUrl = child.attribute("src");
+                if (this->_uniqueuris.contains(this->_flyUrl))
+                {
+                    this->_uniqueuris.remove(this->_flyUrl);
+                }
+            }
+            bool ok;
+            const int idx = this->_flyOrder.toInt(&ok);
+            QString keyuu, urti, tmpurl;
+            if(ok)
+            {
+                if(this->_flyUrl.contains("#"))
+                {
+                    keyuu = this->_flyUrl.left(this->_flyUrl.lastIndexOf("#"));
+                    QStringList io = this->_flyUrl.split(QString("#"));
+                    urti = io.at(1);
+                    if (this->_uniqueuris.contains(urti))
+                    {
+                        this->_uniqueuris.remove(urti);
+                    }
+                    if (this->_uniqueuris.contains(keyuu))
+                    {
+                        this->_uniqueuris.remove(keyuu);
+                    }
+                }
+                else
+                {
+                    keyuu = this->_flyUrl;
+                    urti = QString("toc") + QString::number(genkeyurl(this->_flyUrl));
+                }
+
+                if (this->_uniqueuris.contains(keyuu))
+                {
+                    this->_uniqueuris.remove(keyuu);
+                }
+                EpubToc dax;
+                dax.title = this->_flyUrl;
+                dax.type = QLatin1String("toclist");
+                dax.jumpUrl = urti;
+                dax.zipUrl = keyuu;
+                dax.reserve = this->_flyUrl;
+                dax.orderid = idx + 2;
+                dax.md843 = genkeyurl(keyuu);
+                this->_menuItem.prepend(dax);
+                this->_minNrorder = qMin(this->_minNrorder, idx);
+                this->_maxNrorder = qMax(this->_maxNrorder, idx);
+            }
+            else
+            {
+                EPUBDEBUG() << this->_flyName << " to int fail not insert...";
+            }
+            this->readMenu(child);
+        }
+        else if(QLatin1String("navLabel") == child.tagName())
+        {
+            this->readMenu(child);
+        }
+        else if(QLatin1String("text") == child.tagName())
+        {
+            this->_flyName = child.firstChild().toText().data();
+        }
+        else if (child.isText())
+        {
+            EPUBDEBUG() << "ERROR...!";
+        }
+        else if (QLatin1String("manifest") == child.tagName())
+        {
+            this->readMenu(child);
+        }
+        else if (QLatin1String("item") == child.tagName())
+        {
+            this->fileListRecord(child);
+        }
+        else
+        {
+            EPUBDEBUG() << "not know tag  :" << child.tagName();
+        }
+        child = child.nextSiblingElement();
+    }
+    return true;
 }
+
 auto Document::getPageName(const QString fileName, const QString tag) -> QDomNodeList
 {
+    if(this->_showSynrorun)
+    {
+        EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName << " : " << tag << " current actioncycle.";
+    }
 
+    QDomNodeList defineterror;
+    QString tmp;
+    for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
+    {
+        if(it.key() == fileName)
+        {
+            QByteArray chunx = it.value();
+            QDomElement e = this->make2DomElementXmlFile(chunx);
+            tmp = e.tagName();
+            QDomNodeList der = e.elementsByTagName(tag);
+            QDomNodeList dera = e.elementsByTagName(e.tagName());
+
+            if(der.count() > 0) return der;
+            else if(dera.count() > 0) return dera;
+        }
+    }
+    EPUBDEBUG() << "Request Error: " << fileName << ":" << tag << " export FAIL!....";
+    return defineterror;
 }
+
 auto Document::fileListRecord(const QDomElement e) -> bool
 {
+    if(QLatin1String("item") != e.tagName()) return false;
 
+    const QString xid = e.attribute("id");
+    const QString xhref = e.attribute("href");
+    const QString basexhref = this->_baseRefDir + e.attribute("href");
+    const QString xmedia = e.attribute("media-type");
+
+    if(xid.isEmpty())
+    {
+        setEpubError(QString("Not found attributes id in item tag from content.opf"));
+    }
+
+    if(xmedia.isEmpty())
+    {
+        setEpubError(QString("Not found attributes media-type in item tag from content.opf"));
+    }
+    if(xhref.isEmpty())
+    {
+        setEpubError(QString("Not found attributes href in item tag from content.opf"));
+    }
+    if(xmedia.isEmpty())
+    {
+        setEpubError(QString("Not found attributes media-type in item tag from content.opf"));
+    }
+
+    if(xmedia.contains(QLatin1String("image/")))
+    {
+        if(this->_images.contains(xhref))
+        {
+            this->_recImages << xhref;
+        }
+        else
+        {
+            if(this->_images.contains(basexhref))
+            {
+                this->_useBaseRef = true;
+            }
+            else
+            {
+                setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
+                            .arg(xhref)
+                            .arg(this->_rootFollowFromFile));
+            }
+        }
+    }
+    else if(xmedia.contains(QLatin1String("application/xhtml")))
+    {
+        if(this->_cache.contains(xhref))
+        {
+            EpubToc dax;
+            dax.title = QLatin1String("Unknow Title");
+            dax.type = QLatin1String("xhtml");
+            dax.jumpUrl = xid;
+            dax.idref = xid;
+            dax.md843 = genkeyurl(xhref);
+            dax.zipUrl = xhref;
+            dax.reserve = xhref;
+            dax.orderid = 0;
+            this->_pageItem.append(dax);
+        }
+        else
+        {
+            if(this->_cache.contains(basexhref))
+            {
+                this->_useBaseRef = true;
+                EpubToc dax;
+                dax.title = QLatin1String("Unknow Title");
+                dax.type = QLatin1String("xhtml");
+                dax.jumpUrl = xid;
+                dax.idref = xid;
+                dax.md843 = genkeyurl(basexhref);
+                dax.zipUrl = basexhref;
+                dax.reserve = xhref;
+                dax.orderid = 0;
+                this->_pageItem.append(dax);
+            }
+            else
+            {
+                setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
+                            .arg(xhref)
+                            .arg(this->_rootFollowFromFile));
+            }
+        }
+    }
+    return true;
 }
 
 }
