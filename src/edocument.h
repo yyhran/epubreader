@@ -2,6 +2,8 @@
 #define __E_DOCUMENT__H
 
 #include "unzip.h"
+#include "htmlDriver.h"
+#include "myDom.h"
 
 #define refill QObject::tr
 #define recit2 QString::toStdString
@@ -54,11 +56,17 @@ struct EpubToc
     int orderid;
 };
 
+#define METAINFOCONTAINERFILE QLatin1String("META-INF/container.xml")
+#define CONTENENTOPFFILE QLatin1String("content.opf")
+
 namespace EPUB
 {
 class Document
 {
 public:
+    using DataMap = QMap<QString, QByteArray>;
+    using DataMapIterator = QMapIterator<QString, QByteArray>;
+
     Document(const QString& fileName, const QString& dir);
     ~Document();
 
@@ -67,10 +75,10 @@ public:
     auto lastErrorString() -> QString { return this->_recError.join(" ; "); }
 
 private:
-    auto setEpubError(QString& msg) -> void;
+    auto setEpubError(const QString& msg) -> void;
     auto make2DomElementXmlFile(const QByteArray xml) -> QDomElement;
-    auto images() const -> QMap<QString, QByteArray>;
-    auto structure() const -> QMap<QString, QByteArray>;
+    auto images() const -> DataMap;
+    auto structure() const -> DataMap;
     auto fileGoTo(const QString fullFileName, QByteArray chunk) -> bool;
     auto removeFromRam(const QString fileName) -> bool;
     auto picEncodeCompressed(QImage im, bool press) -> QByteArray;
@@ -90,8 +98,8 @@ private:
     QStringList _recImages;
     QStringList _rspine;
     QSet<QString> _uniqueuris;
-    QMap<QString, QByteArray> _images;
-    QMap<QString, QByteArray> _cache;
+    DataMap _images;
+    DataMap _cache;
     QList<EpubToc> _menuItem;
     QList<EpubToc> _pageItem;
     QList<EpubToc> _revisionPageItem;
