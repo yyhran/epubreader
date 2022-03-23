@@ -8,11 +8,11 @@
 #define refill QObject::tr
 #define recit2 QString::toStdString
 
-#if 0
+#if 1
 #define EPUBDEBUG qDebug
 #define STAGE 1
 #else
-#define EPUBDEBUG if (0) qDebug
+#define EPUBDEBUG if(0) qDebug
 #define STAGE 0
 #endif
 

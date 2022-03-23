@@ -27,8 +27,8 @@
 
 #define UNZIP_READ_BUFFER (256 * 1024)
 
-#if 0
-#define UNZIPDEBUG aDebug
+#if 1
+#define UNZIPDEBUG qDebug
 #else
 #define UNZIPDEBUG if(0) qDebug
 #endif

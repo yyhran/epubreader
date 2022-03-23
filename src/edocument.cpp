@@ -96,8 +96,8 @@ auto Document::open() -> bool
             EPUBDEBUG() << "fileTiele: " << this->_fileTitle;
             EPUBDEBUG() << "minNrorder: " << this->_minNrorder;
             EPUBDEBUG() << "maxNrorder: " << this->_maxNrorder;
-            EPUBDEBUG() << "pageItem: " << this->_pageItem;
-            EPUBDEBUG() << "menuItem: " << this->_menuItem;
+            EPUBDEBUG() << "pageItem: " << this->_pageItem.size();
+            EPUBDEBUG() << "menuItem: " << this->_menuItem.size();
             EPUBDEBUG() << "rspine size: " << this->_rspine.size();
         }
         EPUBDEBUG() << "total error: " << this->_summerror;
