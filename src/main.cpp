@@ -1,9 +1,11 @@
 #include <iostream>
 #include <QApplication>
-#include "unzip.h"
+#include "mainWindow.h"
 
 int main(int argc, char** argv)
 {
-    ::std::cout << "Hi EPUB" << ::std::endl;
-    return 0;
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+    return a.exec();
 }
