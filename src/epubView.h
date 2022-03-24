@@ -3,6 +3,7 @@
 
 #include <QTextBrowser>
 #include <QWidget>
+#include "application.h"
 
 struct VoiceDocument
 {
@@ -45,6 +46,41 @@ class EpubView : public QTextBrowser
 public:
     explicit EpubView(QWidget* parent = 0);
     ~EpubView();
+
+    auto readerMenu() -> QList<EpubToc> { return this->_activeEpub; }
+    auto plainText() -> QString { return this->_text2Voice; }
+    auto currentDoc() -> VoiceDocument { return this->_vcurrent; }
+    auto weneedTxt() -> void;
+
+signals:
+    void paintMenuEpub(bool);
+    void htmlReady();
+    void vdocReady();
+    void incomHtml();
+
+public slots:
+    void playFile(const QUrl localRemote);
+    void openEpub(const QUrl urie);
+    void jumpEpub(const QUrl urie);
+    void startHtmlGrab(bool ok);
+    void handleHtml(QString sHtml);
+
+protected:
+    auto rollContext(const QPoint& pos) -> void;
+    auto centextMenuEvent(QContextMenuEvent* event);
+
+protected:
+    QString _htmlSource;
+    QString _text2Voice;
+    QString _doctitle;
+
+private:
+    int _moduNow;
+    QSet<QString> _uniqueVdoc;
+    QList<VoiceDocument> _voiceHistory;
+    QList<EpubToc> _activeEpub;
+    EPUB::Converter* _playEpub;
+    VoiceDocument _vcurrent;
 };
 
 #endif // __EPUB__VIEW__H

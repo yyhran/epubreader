@@ -27,7 +27,7 @@
 
 #define UNZIP_READ_BUFFER (256 * 1024)
 
-#if 1
+#if 0
 #define UNZIPDEBUG qDebug
 #define UNZIPWARNING qWarning
 #else

@@ -12,7 +12,7 @@ class Converter
 {
 public:
     Converter();
-    virtual ~Converter() = 0;
+    virtual ~Converter();
 
     virtual auto convert(const QString& fileName, const QString& dir) -> const QList<EpubToc>;
 };
