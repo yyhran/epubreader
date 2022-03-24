@@ -836,4 +836,4 @@ auto Document::fileListRecord(const QDomElement e) -> bool
     return true;
 }
 
-}
+} // namespace EPUB

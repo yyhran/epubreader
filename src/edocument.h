@@ -59,8 +59,8 @@ struct EpubToc
 #define METAINFOCONTAINERFILE QLatin1String("META-INF/container.xml")
 #define CONTENENTOPFFILE QLatin1String("content.opf")
 
-namespace EPUB
-{
+namespace EPUB {
+
 class Document
 {
 public:
@@ -126,6 +126,6 @@ private:
     bool _compressOnRam;
 };
 
-}
+} // namespace EPUB
 
 #endif // __E_DOCUMENT__H
