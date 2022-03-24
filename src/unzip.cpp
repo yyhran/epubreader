@@ -7,7 +7,7 @@ constexpr uint UNZIP_CD_ENTRY_SIZE_NS = 42;
 // data descriptor size
 constexpr uint UNZIP_DD_SIZE = 12;
 // end of central directory size
-constexpr uint UNZIP_EOCD_SIZE = 12;
+constexpr uint UNZIP_EOCD_SIZE = 22;
 // local header entry encryption header size
 constexpr uint UNZIP_LOCAL_ENC_HEADER_SIZE = 12;
 
@@ -79,11 +79,14 @@ static auto inflate(Bytef *dest, ulong* destLen, const Bytef* source, ulong sour
     stream.zfree = static_cast<free_func>(0);
 
     err = inflateInit2(&stream, -MAX_WBITS);
+    if(Z_OK != err) return err;
+
+    err = inflate(&stream, Z_FINISH);
     if(Z_STREAM_END != err)
     {
         inflateEnd(&stream);
         if(Z_NEED_DICT == err
-        || (Z_BUF_ERROR == err && 0 == stream.avail_in))
+        or (Z_BUF_ERROR == err and 0 == stream.avail_in))
         return Z_DATA_ERROR;
         return err;
     }
@@ -103,6 +106,7 @@ UnZipStream::UnZipStream(const QString& odtfile)
     {
         this->_isOpen = this->LoadFile(odtfile);
         ec = this->seekToCentralDirectory();
+        UNZIPDEBUG() << "error: " << ec;
         if(UnZipStream::OkFunky != ec)
         {
             this->_isOpen = false;
@@ -169,7 +173,7 @@ auto UnZipStream::fileByte(const QString& fileName) -> QByteArray
         }
     }
     this->start(); // seek 0
-    if(not found || not this->device()) return QByteArray();
+    if(not found  or not this->device()) return QByteArray();
 
     FileHeader metaheader = this->fileHeaders.at(i);
     compressedSize = readUInt(metaheader.h.compressedSize);
@@ -219,12 +223,12 @@ auto UnZipStream::fileByte(const QString& fileName) -> QByteArray
             else
             {
                 decompressChunk.clear();
-                qWarning("UnZip: Z_DATA_ERROR: Input data is corrupted!");
+                UNZIPWARNING("UnZip: Z_DATA_ERROR: Input data is corrupted!");
             }
         } while (Z_BUF_ERROR == res);
         return decompressChunk;
     }
-    qWarning() << "UnZip: Unkonw compression method!";
+    UNZIPWARNING() << "UnZip: Unkonw compression method!";
     return QByteArray();
 }
 
@@ -233,7 +237,7 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
     Q_ASSERT(this->device());
     if(not this->canRead())
     {
-        qDebug() << "Unable to open device for reading...";
+        UNZIPDEBUG() << "Unable to open device for reading...";
         return UnZipStream::OpenFailed;
     }
 
@@ -243,7 +247,7 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
     this->device()->read(reinterpret_cast<char*>(tmp), 4);
     if(0x04034b50 != this->getULong(tmp, 0))
     {
-        qWarning() << "UnZip: not a zip file!";
+        UNZIPWARNING() << "UnZip: not a zip file!";
         return UnZipStream::OpenFailed;
     }
 
@@ -255,9 +259,9 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
     while(-1 == startOfDirectory)
     {
         int pos{static_cast<int>(this->device()->size() - sizeof(EndOfDirectory) - i)};
-        if(pos < 0 || i > 65535)
+        if(pos < 0 or i > 65535)
         {
-            qWarning() << "UnZip: end of directory not found!";
+            UNZIPWARNING() << "UnZip: end of directory not found!";
             return UnZipStream::OpenFailed;
         }
         this->device()->seek(pos);
@@ -273,7 +277,7 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
     int commentLength{readUShort(eod.commentLength)};
     if(commentLength != i)
     {
-        qWarning() << "UnZip: failed to parse zip file!";
+        UNZIPWARNING() << "UnZip: failed to parse zip file!";
         return UnZipStream::OpenFailed;
     }
     this->commentario = this->device()->read(qMin(commentLength, i));
@@ -284,12 +288,12 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
         int read{static_cast<int>(this->device()->read(reinterpret_cast<char*>(&header.h), sizeof(GentralFileHeader)))};
         if(read < static_cast<int>(sizeof(GentralFileHeader)))
         {
-            qWarning() << "UnZip: Failed to read complete header, index may be incomplete!";
+            UNZIPWARNING() << "UnZip: Failed to read complete header, index may be incomplete!";
             break;
         }
         if(0x02014b50 != readUInt(header.h.signature))
         {
-            qWarning() << "UnZip: incalid header signature, index may be incomplete!";
+            UNZIPWARNING() << "UnZip: incalid header signature, index may be incomplete!";
             break;
         }
 
@@ -297,21 +301,21 @@ auto UnZipStream::openArchive() -> UnZipStream::ErrorCode
         header.fileName = this->device()->read(l);
         if(header.fileName.length() != l)
         {
-            qWarning() << "UnZip: Failed to read filename from zip index, index may be incomplete!";
+            UNZIPWARNING() << "UnZip: Failed to read filename from zip index, index may be incomplete!";
             break;
         }
         l = readUShort(header.h.extraFieldLength);
         header.extraField = this->device()->read(l);
         if(header.extraField.length() != l)
         {
-            qWarning() << "UnZip: Failed to read extra field in zip file, skipping file, index may be incomplete!";
+            UNZIPWARNING() << "UnZip: Failed to read extra field in zip file, skipping file, index may be incomplete!";
             break;
         }
         l = readUShort(header.h.fileCommentLength);
         header.fileComment = this->device()->read(l);
         if(header.fileComment.length() != l)
         {
-            qWarning() << "UnZip: Failed to read file comment, index may be incomplete!";
+            UNZIPWARNING() << "UnZip: Failed to read file comment, index may be incomplete!";
             break;
         }
         this->fileHeaders.append(header);
@@ -333,8 +337,9 @@ auto UnZipStream::seekToCentralDirectory() -> UnZipStream::ErrorCode
     if(eocdFound) this->eocdOffset = offset;
     else return UnZipStream::HandleCommentHere;
 
+    if(not eocdFound) return UnZipStream::InvalidArchive;
     offset = this->getULong(reinterpret_cast<const unsigned char*>(this->buffer1),
-                            UNZIP_EOCD_OFF_COMMLEN + 4);
+                            UNZIP_EOCD_OFF_CDOFF + 4);
     this->cdOffset = offset;
     this->cdEntryCount = this->getUShort(reinterpret_cast<const unsigned char*>(this->buffer1),
                                          UNZIP_EOCD_OFF_ENTRIES +4);

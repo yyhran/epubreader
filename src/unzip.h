@@ -29,8 +29,10 @@
 
 #if 1
 #define UNZIPDEBUG qDebug
+#define UNZIPWARNING qWarning
 #else
 #define UNZIPDEBUG if(0) qDebug
+#define UNZIPWARNING if(0) qWarning
 #endif
 
 static inline QString MimeinFile(const QString file)

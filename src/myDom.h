@@ -20,8 +20,14 @@
 #define POINT_TO_DD(dd) ((dd) / 154.08124)
 #define POINT_TO_CC(cc) ((cc) / 12.840103)
 
+#ifndef MM_TO_POINT
 #define MM_TO_POINT(mm) ((mm)*2.83465058)
+#endif // MM_TO_POINT
+
+#ifndef CM_TO_POINT
 #define CM_TO_POINT(cm) ((cm)*28.3465058) ///// 28.346456693
+#endif // CM_TO_POINT
+
 #define DM_TO_POINT(dm) ((dm)*283.465058)
 #define INCH_TO_POINT(inch) ((inch)*72.0)
 #define PI_TO_POINT(pi) ((pi)*12)
