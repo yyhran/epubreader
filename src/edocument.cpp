@@ -431,7 +431,9 @@ auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
 
 auto Document::metaReader() -> bool
 {
-    EPUBDEBUG() << "meta reader only read & follow:" << METAINFOCONTAINERFILE << " line:" << __LINE__;
+    EPUBDEBUG() << "meta reader only read & follow:" << METAINFOCONTAINERFILE
+                << "function: " << __FUNCTION__
+                << " line:" << __LINE__;
     const QByteArray xml = this->_nextFileToReadXmlChunk;
     this->_nextFileToReadCrono = METAINFOCONTAINERFILE;
     bool xvalid{false};
