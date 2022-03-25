@@ -461,7 +461,7 @@ auto Document::metaReader() -> bool
                 dax.title = node.attribute("title");
                 dax.jumpUrl = QLatin1String("top");
                 dax.zipUrl = hrefi;
-                dax.md843 = genkeyurl(hrefi);
+                dax.md843 = genKeyUrl(hrefi);
                 if(QLatin1String("toc") == type)
                 {
                     dax.type = QString("toc");
@@ -585,7 +585,7 @@ auto Document::readMenu(const QDomElement& element) -> bool
                 else
                 {
                     keyuu = this->_flyUrl;
-                    urti = QString("toc") + QString::number(genkeyurl(this->_flyUrl));
+                    urti = QString("toc") + QString::number(genKeyUrl(this->_flyUrl));
                 }
 
                 if (this->_uniqueuris.contains(keyuu))
@@ -599,7 +599,7 @@ auto Document::readMenu(const QDomElement& element) -> bool
                 dax.zipUrl = keyuu;
                 dax.reserve = this->_flyUrl;
                 dax.orderid = idx + 2;
-                dax.md843 = genkeyurl(keyuu);
+                dax.md843 = genKeyUrl(keyuu);
                 this->_menuItem.prepend(dax);
                 this->_minNrorder = qMin(this->_minNrorder, idx);
                 this->_maxNrorder = qMax(this->_maxNrorder, idx);
@@ -715,7 +715,7 @@ auto Document::fileListRecord(const QDomElement e) -> bool
             dax.type = QLatin1String("xhtml");
             dax.jumpUrl = xid;
             dax.idref = xid;
-            dax.md843 = genkeyurl(xhref);
+            dax.md843 = genKeyUrl(xhref);
             dax.zipUrl = xhref;
             dax.reserve = xhref;
             dax.orderid = 0;
@@ -731,7 +731,7 @@ auto Document::fileListRecord(const QDomElement e) -> bool
                 dax.type = QLatin1String("xhtml");
                 dax.jumpUrl = xid;
                 dax.idref = xid;
-                dax.md843 = genkeyurl(basexhref);
+                dax.md843 = genKeyUrl(basexhref);
                 dax.zipUrl = basexhref;
                 dax.reserve = xhref;
                 dax.orderid = 0;

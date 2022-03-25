@@ -2,7 +2,6 @@
 #define __E_DOCUMENT__H
 
 #include "unzip.h"
-#include "myDom.h"
 #include <QCoreApplication>
 
 #define refill QObject::tr
@@ -15,6 +14,21 @@
 #define EPUBDEBUG if(0) qDebug
 #define STAGE 0
 #endif
+
+static inline auto genKeyUrl(const QString name) -> int
+{
+    int base{0};
+    int xsize{name.size()};
+    if(15 < xsize) xsize = 15;
+    for(int i{0}; i < xsize; ++i)
+    {
+        const QChar vox(name.at(i));
+        const int unico = static_cast<int>(vox.unicode());
+        base += unico;
+    }
+    base += 2017;
+    return base;
+}
 
 struct EpubToc
 {
