@@ -2,13 +2,13 @@
 #define __E_DOCUMENT__H
 
 #include "unzip.h"
-#include "htmlDriver.h"
 #include "myDom.h"
+#include <QCoreApplication>
 
 #define refill QObject::tr
 #define recit2 QString::toStdString
 
-#if 1
+#if 0
 #define EPUBDEBUG qDebug
 #define STAGE 1
 #else
@@ -79,9 +79,7 @@ private:
     auto make2DomElementXmlFile(const QByteArray xml) -> QDomElement;
     auto images() const -> DataMap;
     auto structure() const -> DataMap;
-    auto fileGoTo(const QString fullFileName, QByteArray chunk) -> bool;
     auto removeFromRam(const QString fileName) -> bool;
-    auto picEncodeCompressed(QImage im, bool press) -> QByteArray;
     auto lostFoundSyncro() -> void;
     auto pageBuilder() -> void;
     auto getPageKeyMd843(const int idmd, EpubToc& item) -> void;
@@ -92,14 +90,19 @@ private:
     auto readMenu(const QDomElement& element) -> bool;
     auto getPageName(const QString fileName, const QString tag = "body") -> QDomNodeList;
     auto fileListRecord(const QDomElement e) -> bool;
+    auto saveFile(const QString& name, DataMap::iterator& data) -> void;
 
 private:
     QStringList _recError;
     QStringList _recImages;
     QStringList _rspine;
     QSet<QString> _uniqueuris;
-    DataMap _images;
     DataMap _cache;
+
+    DataMap _imageData;
+    DataMap _textData;
+    DataMap _styleData;
+
     QList<EpubToc> _menuItem;
     QList<EpubToc> _pageItem;
     QList<EpubToc> _revisionPageItem;
@@ -122,7 +125,6 @@ private:
     int _summerror;
     int _minNrorder;
     int _maxNrorder;
-    bool _showSynrorun;
     bool _compressOnRam;
 };
 

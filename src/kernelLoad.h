@@ -22,8 +22,6 @@
 #include <QProcess>
 #include <QMap>
 
-static qint64 megaLimit = 10 * 1048576;
-
 #define POINT_TO_CM(cm) ((cm) / 28.3465058)
 #define POINT_TO_MM(mm) ((mm) / 2.83465058)
 #define MM_TO_POINT(mm) ((mm) * 2.83465058)

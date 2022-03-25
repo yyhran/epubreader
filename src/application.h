@@ -44,15 +44,6 @@
 
 #include "econverter.h"
 
-
-#if 1 //// 1 or 0
-#define CCDEBUG qDebug
-#define STAGE 1
-#else
-#define CCDEBUG if (0) qDebug
-#define STAGE 0
-#endif
-
 #define WEBAGENTNAME "Google"
 #define _PROGRAM_NAME_ QString("KernelApp")
 #define _PROGRAM_NAME_DOMAINE_ QString("qt.io")

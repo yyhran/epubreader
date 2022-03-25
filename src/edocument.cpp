@@ -10,14 +10,12 @@ Document::Document(const QString& fileName, const QString& dir)
     , _summerror(0)
     , _minNrorder(10000)
     , _maxNrorder(0)
-    , _showSynrorun(true)
     , _compressOnRam(false)
 {
-    QFileInfo cc(fileName);
-    QString fileIni = cc.baseName();
-    const QString dirFile = fileIni.replace(".", "_");
-    this->_dirBrowserBook = dir + dirFile + QString("/");
-    EPUBDEBUG() << "fileName: " << fileName;
+    QFileInfo fileInfo(fileName);
+    QString name = fileInfo.baseName();
+    this->_dirBrowserBook = QCoreApplication::applicationDirPath() + "/books/" + name + "/";
+    EPUBDEBUG() << "fileName: " << name;
     EPUBDEBUG() << "dirBrowserBook: " << this->_dirBrowserBook;
 }
 
@@ -34,10 +32,8 @@ auto Document::open() -> bool
     {
         const QStringList entries = unZip->fileList();
         DataMap allFiles = unZip->listData();
-        DataMapIterator it(allFiles);
-        while (it.hasNext())
+        for(auto it = allFiles.begin(); it != allFiles.end(); ++it)
         {
-            it.next();
             QByteArray chunk;
             QByteArray stream = it.value();
             if(this->_compressOnRam)
@@ -46,27 +42,30 @@ auto Document::open() -> bool
             }
             else
             {
-                chunk = stream;
-                stream.clear();
-            }
-            QString name(it.key());
-            QString mim = MimeinFile(name);
-            QString rec = QLatin1String("not");
-            if(QLatin1String("text/html") == mim or QLatin1String("application/xhtml+xml") == mim)
-            {
-                this->_uniqueuris.insert(name);
-                rec = QLatin1String("track");
+                qSwap(chunk, stream);
             }
 
-            if(this->_showSynrorun)
+            QString name(it.key());
+            EPUBDEBUG() << "file zip in: " << name;
+            QString mimeType = MimeinFile(name);
+            if(QLatin1String("text/html") == mimeType or QLatin1String("application/xhtml+xml") == mimeType)
             {
-                EPUBDEBUG() << "file zip in: " << name << "reg: " << rec;
-            } 
+                this->_uniqueuris.insert(name);
+                this->_textData.insert(name, it.value());
+            }
+            else if(QLatin1String("image/jpeg") == mimeType)
+            {
+               this->_imageData.insert(name, it.value()); 
+            }
+            else if(QLatin1String("text/css") == mimeType)
+            {
+                this->_styleData.insert(name, it.value());
+            }
 
             QImage pic = QImage::fromData(it.value());
             if(not pic.isNull())
             {
-                this->_images.insert(name, chunk);
+                this->_imageData.insert(name, chunk);
             }
             else
             {
@@ -76,10 +75,13 @@ auto Document::open() -> bool
                 }
                 this->_cache.insert(name, chunk);
             }
+            this->saveFile(name, it);
         }
     }
 
-    unZip->~UnZipStream();
+    delete unZip;
+    unZip = nullptr;
+
     if(this->_nextFileToReadXmlChunk.size() < 4) return false;
     else
     {
@@ -88,10 +90,8 @@ auto Document::open() -> bool
         {
             EPUBDEBUG() << "BASEREFDIR: " << this->_baseRefDir;
         }
-        if(this->_showSynrorun)
         {
             EPUBDEBUG() << "rspine: " << this->_rspine;
-            EPUBDEBUG() << "startIndexPager: " << this->_startIndexPager;
             EPUBDEBUG() << "coverPager: " << this->_coverPager;
             EPUBDEBUG() << "fileTiele: " << this->_fileTitle;
             EPUBDEBUG() << "minNrorder: " << this->_minNrorder;
@@ -121,10 +121,8 @@ auto Document::setEpubError(const QString& msg) -> void
 
 auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
 {
-    if(this->_showSynrorun)
-    {
-        EPUBDEBUG() << "make2DomElementXmlFile fiel: " << this->_nextFileToReadCrono;
-    }
+    EPUBDEBUG() << "make2DomElementXmlFile fiel: " << this->_nextFileToReadCrono;
+
     QDomDocument root;
     if(xml.size() < 5) return root.createElement("root");
 
@@ -140,10 +138,7 @@ auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
     if(document.setContent(&source, &reader, &eErrorMsg))
     {
         node = document.documentElement();
-        if(this->_showSynrorun)
-        {
-            EPUBDEBUG() << "sucess make2DomElementXmlFile first tagName: " << node.tagName();
-        }
+        EPUBDEBUG() << "sucess make2DomElementXmlFile first tagName: " << node.tagName();
         return node;
     }
     else
@@ -153,87 +148,32 @@ auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
     return root.createElement("root");
 }
 
-auto Document::images() const -> DataMap { return this->_images; }
+auto Document::images() const -> DataMap { return this->_imageData; }
 
 auto Document::structure() const -> DataMap { return this->_cache; }
 
-auto Document::fileGoTo(const QString fullFileName, QByteArray chunk) -> bool
-{
-    QFileInfo fi(fullFileName);
-    if(fullFileName.contains("/", Qt::CaseInsensitive))
-    {
-        QDir dir(fi.absoluteFilePath());
-        if(not dir.mkpath(fi.absoluteFilePath())) return false;
-    }
-    unLink(fullFileName);
-    QFile f(fullFileName);
-    if(f.open(QIODevice::WriteOnly))
-    {
-        f.write(chunk.constData(), chunk.size());
-        f.close();
-        if(f.bytesAvailable() > 0) return true;
-    }
-    return false;
-}
-
 auto Document::removeFromRam(const QString fileName) -> bool
 {
-    if(this->_showSynrorun)
-    {
-        EPUBDEBUG() << "remove file: " << fileName << " .";
-    }
-    bool remove{false};
-    int rec{0};
+    EPUBDEBUG() << "remove file: " << fileName << " .";
     for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
     {
-        if(fileName == it.key()) remove = true;
-    }
-    if(remove)
-    {
-        rec = this->_cache.remove(fileName);
-        if(1 != rec)
+        if(fileName == it.key())
         {
-            this->setEpubError(QString("unable to remove: %2 from ram cache file: %1").arg(fileName).arg(rec));
-        }
-        else
-        {
-            if(this->_showSynrorun)
+            int ret = this->_cache.remove(fileName); 
+            if(1 == ret)
             {
                 EPUBDEBUG() << "sucess remove from ram file: " << fileName << " .";
+                return true;
+            }
+            else
+            {
+                this->setEpubError(QString("unable to remove: %2 from ram cache.").arg(fileName));
+                return false;
             }
         }
     }
-    return rec == 1;
-}
 
-auto Document::picEncodeCompressed(QImage im, bool press) -> QByteArray
-{
-    int w{im.width()};
-    QByteArray bytes;
-    if(w > 550) im.scaled(550, 550, Qt::KeepAspectRatio);
-
-    QBuffer buffer(&bytes);
-    buffer.open(QIODevice::WriteOnly);
-    im.save(&buffer, "PNG");
-    if(bytes.size() > 0)
-    {
-        QByteArray blueImag = bytes.toBase64();
-        QByteArray orderPic("data:image/png;base64,");
-        orderPic.append(blueImag);
-        if(press) return qCompress(orderPic);
-        else return orderPic;
-    }
-    else
-    {
-        if(press)
-        {
-            return qCompress(QByteArray("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="));
-        }
-        else
-        {
-            return QByteArray("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==");
-        }
-    }
+    return false;
 }
 
 auto Document::lostFoundSyncro() -> void
@@ -246,10 +186,7 @@ auto Document::lostFoundSyncro() -> void
             this->_uniqueuris.remove(urlZip);
         }
 
-        if(this->_showSynrorun)
-        {
-            EPUBDEBUG() << "page item set: " << fox.debug();
-        }
+        EPUBDEBUG() << "page item set: " << fox.debug();
     }
 
     for(auto&& fox : this->_menuItem)
@@ -260,29 +197,10 @@ auto Document::lostFoundSyncro() -> void
             this->_uniqueuris.remove(urlZip);
         }
 
-        if(this->_showSynrorun)
-        {
-            EPUBDEBUG() << "menu item set: " << fox.debug();
-        }
+        EPUBDEBUG() << "menu item set: " << fox.debug();
     }
 
-    DataMapIterator itm(this->_images);
-    while(itm.hasNext())
-    {
-        itm.next();
-        const QString file = itm.key();
-        const QString dest = this->_dirBrowserBook + file;
-        this->fileGoTo(dest, itm.value());
-    }
-    DataMapIterator itc(this->_cache);
-    while(itc.hasNext())
-    {
-        itc.next();
-        const QString file = itc.key();
-        const QString dest = this->_dirBrowserBook + file;
-        this->fileGoTo(dest, itc.value());
-    }
-    this->_images.clear();
+    this->_imageData.clear();
     this->_cache.clear();
 }
 
@@ -404,7 +322,6 @@ auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
             }
             found = true;
             item = fox;
-            break;
         }
     }
     if(not found)
@@ -419,7 +336,6 @@ auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
                 }
                 found = true;
                 item = fox;
-                break;
             }
         }
     }
@@ -444,9 +360,10 @@ auto Document::metaReader() -> bool
     if(der.count() < 1)
     {
         EPUBDEBUG() << __FUNCTION__ << " ERROR: der.count():" << der.count() << " line:" << __LINE__;
-        setEpubError(QString("unable to get place from file content.opf, inside META-INF/container.xml"));
+        this->setEpubError(QString("unable to get place from file content.opf, inside META-INF/container.xml"));
         return xvalid;
     }
+
     this->removeFromRam(this->_nextFileToReadCrono);
     for(int i{0}; i < der.count(); ++i) 
     {
@@ -454,15 +371,18 @@ auto Document::metaReader() -> bool
         this->_nextFileToReadCrono = node.attribute("full-path");
         EPUBDEBUG() << "Start on file:" << this->_nextFileToReadCrono << __LINE__;
     }
+
     if(this->_nextFileToReadCrono.size() < 1)
     {
-        setEpubError(QString("unable to get place from file content.opf, inside META-INF/container.xml"));
+        this->setEpubError(QString("unable to get place from file content.opf, inside META-INF/container.xml"));
         return false;
     }
+
     if(this->_nextFileToReadCrono.contains("/"))
     {
         this->_baseRefDir = this->_nextFileToReadCrono.left(this->_nextFileToReadCrono.lastIndexOf("/")) + "/";
     }
+
     QDomNodeList itemlist = this->getPageName(this->_nextFileToReadCrono, QString("item"));
     for(int i{0}; i < itemlist.count(); ++i) 
     {
@@ -603,10 +523,7 @@ auto Document::metaReader() -> bool
 
 auto Document::cacheFinder(const QString findFile) -> bool
 {
-    if(this->_showSynrorun)
-    {
-        EPUBDEBUG() << "CacheFinder:" << findFile << " .";
-    }
+    EPUBDEBUG() << "CacheFinder:" << findFile << " .";
 
     bool havigness = false;
     for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
@@ -724,10 +641,7 @@ auto Document::readMenu(const QDomElement& element) -> bool
 
 auto Document::getPageName(const QString fileName, const QString tag) -> QDomNodeList
 {
-    if(this->_showSynrorun)
-    {
-        EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName << " : " << tag << " current actioncycle.";
-    }
+    EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName << " : " << tag << " current actioncycle.";
 
     QDomNodeList defineterror;
     QString tmp;
@@ -760,37 +674,33 @@ auto Document::fileListRecord(const QDomElement e) -> bool
 
     if(xid.isEmpty())
     {
-        setEpubError(QString("Not found attributes id in item tag from content.opf"));
+        this->setEpubError(QString("Not found attributes id in item tag from content.opf"));
     }
 
     if(xmedia.isEmpty())
     {
-        setEpubError(QString("Not found attributes media-type in item tag from content.opf"));
+        this->setEpubError(QString("Not found attributes media-type in item tag from content.opf"));
     }
     if(xhref.isEmpty())
     {
-        setEpubError(QString("Not found attributes href in item tag from content.opf"));
-    }
-    if(xmedia.isEmpty())
-    {
-        setEpubError(QString("Not found attributes media-type in item tag from content.opf"));
+        this->setEpubError(QString("Not found attributes href in item tag from content.opf"));
     }
 
     if(xmedia.contains(QLatin1String("image/")))
     {
-        if(this->_images.contains(xhref))
+        if(this->_imageData.contains(xhref))
         {
             this->_recImages << xhref;
         }
         else
         {
-            if(this->_images.contains(basexhref))
+            if(this->_imageData.contains(basexhref))
             {
                 this->_useBaseRef = true;
             }
             else
             {
-                setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
+                this->setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
                             .arg(xhref)
                             .arg(this->_rootFollowFromFile));
             }
@@ -829,13 +739,26 @@ auto Document::fileListRecord(const QDomElement e) -> bool
             }
             else
             {
-                setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
-                            .arg(xhref)
-                            .arg(this->_rootFollowFromFile));
+                this->setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
+                            .arg(xhref).arg(this->_rootFollowFromFile));
             }
         }
     }
     return true;
+}
+
+auto Document::saveFile(const QString& name, DataMap::iterator& data) -> void
+{
+    QString savePath = this->_dirBrowserBook + name;
+    QString dirPath = savePath.left(savePath.lastIndexOf("/")) + "/";
+    QDir dir(dirPath);
+    if(not dir.exists()) dir.mkpath(dirPath);
+
+    QFile file(savePath);
+    if(file.open(QIODevice::WriteOnly))
+    {
+        file.write(data.value());
+    }
 }
 
 } // namespace EPUB
