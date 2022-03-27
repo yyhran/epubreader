@@ -24,6 +24,8 @@ private slots:
     void openFile();
     void gotoPage(int page = 0);
 
+    void keyPressEvent(QKeyEvent* e) override { this->_epubView->keyPressEvent(e); }
+
 private:
     auto initLayout() -> void;
     auto setMenu() -> void;

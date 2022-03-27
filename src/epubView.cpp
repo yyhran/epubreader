@@ -18,16 +18,12 @@ auto EpubView::loadFile(const QString& path) -> void
     this->_document = new EPUB::Document(path, this);
     this->_document->open();
 
-    auto toc = this->_document->menuList();
-    qDebug() << "--------------------------------------------------------";
-    for(auto&& t : toc)
-    {
-        qDebug() << t.print();
-    }
+    // test begin
     QFile f("d:/GitHub/epubreader/build/books/test/OEBPS/Text/chapter004.xhtml");
     f.open(QIODevice::ReadOnly);
     auto data = f.readAll();
     this->_document->setHtml(data);
+    // test end
 }
 
 auto EpubView::scroll(int amount) -> void
@@ -51,7 +47,7 @@ auto EpubView::scrollPage(int amount) -> void
 void EpubView::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
-        painter.fillRect(rect(), Qt::white);
+    painter.fillRect(rect(), Qt::white);
     if(not this->_document->opened())
     {
         painter.drawText(rect(), Qt::AlignCenter, "Loading...");
@@ -85,10 +81,10 @@ void EpubView::keyPressEvent(QKeyEvent* e)
     switch (e->key())
     {
     case Qt::Key_Up:
-        this->scroll(-40);
+        this->scroll(-20);
         break;
     case Qt::Key_Down:
-        this->scroll(40);
+        this->scroll(20);
         break;
     case Qt::Key_Left:
         this->scrollPage(-1);
@@ -99,6 +95,7 @@ void EpubView::keyPressEvent(QKeyEvent* e)
     case Qt::Key_End:
         this->_offset = this->_document->size().height() - this->_document->pageSize().height();
         update();
+        break;
     default:
         break;
     }

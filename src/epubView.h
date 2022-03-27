@@ -84,7 +84,6 @@ public:
 
     auto loadFile(const QString& path) -> void;
 
-protected:
     void paintEvent(QPaintEvent* e) override;
     void keyPressEvent(QKeyEvent* e) override;
     void resizeEvent(QResizeEvent* e) override;

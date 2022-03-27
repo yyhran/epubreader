@@ -60,7 +60,7 @@ auto Document::open() -> bool
                 this->_nextFileToReadXmlChunk = chunk;
             }
             this->_cache.insert(name, chunk);
-            this->saveFile(name, it);
+            // this->saveFile(name, it);
         }
     }
 
