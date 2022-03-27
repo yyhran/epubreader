@@ -2,7 +2,7 @@
 
 EpubView::EpubView(QWidget* parent)
     : QWidget(parent)
-    , _document(new EPUB::Document("d:/GitHub/epubreader/res/test.epub", this))
+    , _document(Q_NULLPTR)
     , _offset(0)
 {
 }
@@ -14,7 +14,20 @@ EpubView::~EpubView()
 
 auto EpubView::loadFile(const QString& path) -> void
 {
+    delete this->_document;
+    this->_document = new EPUB::Document(path, this);
+    this->_document->open();
 
+    auto toc = this->_document->menuList();
+    qDebug() << "--------------------------------------------------------";
+    for(auto&& t : toc)
+    {
+        qDebug() << t.print();
+    }
+    QFile f("d:/GitHub/epubreader/build/books/test/OEBPS/Text/chapter004.xhtml");
+    f.open(QIODevice::ReadOnly);
+    auto data = f.readAll();
+    this->_document->setHtml(data);
 }
 
 auto EpubView::scroll(int amount) -> void
@@ -39,7 +52,7 @@ void EpubView::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
         painter.fillRect(rect(), Qt::white);
-    if(!this->_document)
+    if(not this->_document->opened())
     {
         painter.drawText(rect(), Qt::AlignCenter, "Loading...");
         return;

@@ -6,9 +6,12 @@
 #include <QStackedWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QAction>
-#include <QMenu>
-// #include "epubView.h"
+#include <QMenuBar>
+#include <QFileDialog>
+#include <QDebug>
+#include <QLabel>
+#include <QDockWidget>
+#include "epubView.h"
 
 class MainWindow : public QMainWindow
 {
@@ -17,9 +20,20 @@ public:
     MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
+private slots:
+    void openFile();
+    void gotoPage(int page = 0);
+
 private:
     auto initLayout() -> void;
-    auto initSlots() -> void;
+    auto setMenu() -> void;
+    auto setHomeWidge() -> void;
+    auto setViewWidget() -> void;
+
+private:
+    QStackedWidget* _stackedWidget;
+    QListWidget* _listWidget;
+    EpubView* _epubView;
 };
 
 #endif // __MAIN_WINDOW__H

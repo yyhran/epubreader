@@ -11,10 +11,13 @@ Document::Document(const QString& fileName, QObject* parent)
     , _minNrorder(10000)
     , _maxNrorder(0)
     , _compressOnRam(false)
+    , _opened(false)
 {
     QFileInfo fileInfo(fileName);
     QString name = fileInfo.baseName();
     this->_bookPath = QCoreApplication::applicationDirPath() + "/books/" + name + "/";
+    QDir dir(this->_bookPath);
+    if(not dir.exists()) dir.mkpath(this->_bookPath);
     EPUBDEBUG() << "fileName: " << name;
     EPUBDEBUG() << "bookPath: " << this->_bookPath;
 }
@@ -84,7 +87,11 @@ auto Document::open() -> bool
         }
 
         if(ojbk) this->pageBuilder();
-        if(this->_revisionPageItem.size() > 1) return true;
+        if(this->_revisionPageItem.size() > 1) 
+        {
+            this->_opened = true;
+            return true;
+        }
     }
     return false;
 }

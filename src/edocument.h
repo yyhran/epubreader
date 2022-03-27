@@ -87,8 +87,8 @@ public:
     ~Document();
 
     auto open() -> bool;
+    auto opened() const -> bool { return this->_opened; }
     auto menuList() const -> QList<EpubToc> { return this->_revisionPageItem; }
-    auto lastErrorString() -> QString { return this->_recError.join(" ; "); }
 
 private:
     auto make2DomElementXmlFile(const QByteArray xml) -> QDomElement;
@@ -108,7 +108,6 @@ private:
     auto saveFile(const QString& name, DataMap::iterator& data) -> void;
 
 private:
-    QStringList _recError;
     QStringList _recImages;
     QStringList _rspine;
     QSet<QString> _uniqueuris;
@@ -140,6 +139,7 @@ private:
     int _minNrorder;
     int _maxNrorder;
     bool _compressOnRam;
+    bool _opened;
 };
 
 } // namespace EPUB
