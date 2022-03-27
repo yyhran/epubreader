@@ -45,7 +45,7 @@
 #include <QDate>
 #include <QPainter>
 
-#include "econverter.h"
+#include "edocument.h"
 
 struct VoiceDocument
 {
@@ -101,6 +101,7 @@ private:
     auto scrollPage(int amount) -> void;
 
 private:
+    EPUB::Document* _document;
     int _offset;
 };
 
