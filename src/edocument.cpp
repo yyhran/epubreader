@@ -8,7 +8,6 @@ Document::Document(const QString& fileName, QObject* parent)
     , _coverPager("")
     , _startIndexPager("")
     , _useBaseRef(false)
-    , _summerror(0)
     , _minNrorder(10000)
     , _maxNrorder(0)
     , _compressOnRam(false)
@@ -83,23 +82,11 @@ auto Document::open() -> bool
                         << "menuItem: " << this->_menuItem.size() << '\n'
                         << "rspine size: " << this->_rspine.size() << '\n';
         }
-        EPUBDEBUG() << "total error: " << this->_summerror;
-        if(this->_summerror > 0)
-        {
-            EPUBDEBUG() << "code error: " << this->_recError;
-        }
 
-        if(ojbk && this->_summerror < 3) this->pageBuilder();
+        if(ojbk) this->pageBuilder();
         if(this->_revisionPageItem.size() > 1) return true;
     }
     return false;
-}
-
-auto Document::setEpubError(const QString& msg) -> void
-{
-    EPUBDEBUG() << "new error: " << msg;
-    ++this->_summerror;
-    this->_recError << msg;
 }
 
 auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
@@ -125,7 +112,7 @@ auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
     }
     else
     {
-        this->setEpubError(QString("make2DomElementXmlFile unable to read xml file ... %1").arg(eErrorMsg));
+        EPUBWARNING() << "make2DomElementXmlFile unable to read xml file ... " << eErrorMsg;
     }
     return root.createElement("root");
 }
@@ -149,7 +136,7 @@ auto Document::removeFromRam(const QString fileName) -> bool
             }
             else
             {
-                this->setEpubError(QString("unable to remove: %2 from ram cache.").arg(fileName));
+                EPUBWARNING() << "unable to remove: " << fileName << " from ram cache.";
                 return false;
             }
         }
@@ -303,6 +290,7 @@ auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
             }
             found = true;
             item = fox;
+            break;
         }
     }
     if(not found)
@@ -317,12 +305,14 @@ auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
                 }
                 found = true;
                 item = fox;
+                break;
             }
         }
     }
+
     if(not found)
     {
-        this->setEpubError(QString("unable to get id from page %1").arg(ref));
+        EPUBWARNING() << "unable to get id from page " << ref;
     }
 }
 
@@ -340,8 +330,9 @@ auto Document::metaReader() -> bool
     QDomNodeList der = root.elementsByTagName("rootfile");
     if(der.count() < 1)
     {
-        EPUBDEBUG() << __FUNCTION__ << " ERROR: der.count():" << der.count() << " line:" << __LINE__;
-        this->setEpubError(QString("unable to get place from file content.opf, inside META-INF/container.xml"));
+        EPUBDEBUG() << __FUNCTION__ << " ERROR: der.count():"
+                    << der.count() << " line:" << __LINE__;
+        EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
         return xvalid;
     }
 
@@ -355,7 +346,7 @@ auto Document::metaReader() -> bool
 
     if(this->_nextFileToReadCrono.size() < 1)
     {
-        this->setEpubError(QString("unable to get place from file content.opf, inside META-INF/container.xml"));
+        EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
         return false;
     }
 
@@ -409,7 +400,7 @@ auto Document::metaReader() -> bool
     }
     else
     {
-        this->setEpubError(QString("Unable to find file : %1").arg(CONTENENTOPFFILE));
+        EPUBWARNING() << "Unable to find file : " << CONTENENTOPFFILE;
         return false;
     }
 
@@ -471,7 +462,7 @@ auto Document::metaReader() -> bool
                 QString orderidx = node.attribute("idref");
                 if(orderidx.isEmpty())
                 {
-                    this->setEpubError(QString("Not found  idref to over or init page!"));
+                    EPUBWARNING() << "Not found  idref to over or init page!";
                     return false;
                 }
                 if(this->_rspine.size() < this->_pageItem.size())
@@ -485,7 +476,7 @@ auto Document::metaReader() -> bool
     this->removeFromRam(this->_nextFileToReadCrono);
     if(this->_coverPager.isEmpty())
     {
-        this->setEpubError(QString("Coverpage or StartPage variable is not full! from file %1").arg(this->_nextFileToReadCrono));
+        EPUBWARNING() << "Coverpage or StartPage variable is not full! from file " << this->_nextFileToReadCrono;
     }
     else
     {
@@ -655,16 +646,16 @@ auto Document::fileListRecord(const QDomElement e) -> bool
 
     if(xid.isEmpty())
     {
-        this->setEpubError(QString("Not found attributes id in item tag from content.opf"));
+        EPUBWARNING() << "Not found attributes id in item tag from content.opf";
     }
 
     if(xmedia.isEmpty())
     {
-        this->setEpubError(QString("Not found attributes media-type in item tag from content.opf"));
+        EPUBWARNING() << "Not found attributes media-type in item tag from content.opf";
     }
     if(xhref.isEmpty())
     {
-        this->setEpubError(QString("Not found attributes href in item tag from content.opf"));
+        EPUBWARNING() << "Not found attributes href in item tag from content.opf";
     }
 
     if(xmedia.contains(QLatin1String("image/")))
@@ -681,9 +672,8 @@ auto Document::fileListRecord(const QDomElement e) -> bool
             }
             else
             {
-                this->setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
-                            .arg(xhref)
-                            .arg(this->_rootFollowFromFile));
+                EPUBWARNING() << "Nofile: " << this->_rootFollowFromFile
+                              << " from META-INF/container.xml:-> !!" << xhref;
             }
         }
     }
@@ -720,8 +710,8 @@ auto Document::fileListRecord(const QDomElement e) -> bool
             }
             else
             {
-                this->setEpubError(QString("Nofile: %2 from META-INF/container.xml:-> !!%1")
-                            .arg(xhref).arg(this->_rootFollowFromFile));
+                EPUBWARNING() << "Nofile: " << this->_rootFollowFromFile
+                              << "from META-INF/container.xml:-> !!" << xhref;
             }
         }
     }

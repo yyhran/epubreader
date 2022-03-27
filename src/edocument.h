@@ -9,9 +9,11 @@
 
 #if 0
 #define EPUBDEBUG qDebug
+#define EPUBWARNING qWarning
 #define STAGE 1
 #else
 #define EPUBDEBUG if(0) qDebug
+#define EPUBWARNING if(0) qWarning
 #define STAGE 0
 #endif
 
@@ -89,7 +91,6 @@ public:
     auto lastErrorString() -> QString { return this->_recError.join(" ; "); }
 
 private:
-    auto setEpubError(const QString& msg) -> void;
     auto make2DomElementXmlFile(const QByteArray xml) -> QDomElement;
     auto images() const -> DataMap;
     auto structure() const -> DataMap;
@@ -136,7 +137,6 @@ private:
     QString _bookPath;
     QByteArray _nextFileToReadXmlChunk;
     bool _useBaseRef;
-    int _summerror;
     int _minNrorder;
     int _maxNrorder;
     bool _compressOnRam;

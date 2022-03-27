@@ -1,7 +1,6 @@
 #ifndef __EPUB_VIEW__H
 #define __EPUB_VIEW__H
 
-#include <QTextBrowser>
 #include <QWidget>
 #include <QApplication>
 #include <QCloseEvent>
@@ -36,13 +35,7 @@
 #include <QWidgetAction>
 #include <QVariant>
 #include <QAction>
-#include <QApplication>
-#include <QButtonGroup>
-#include <QGridLayout>
 #include <QHeaderView>
-#include <QDateTime>
-#include <QTextBrowser>
-#include <QDate>
 #include <QPainter>
 
 #include "edocument.h"
