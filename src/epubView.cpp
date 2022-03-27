@@ -18,6 +18,13 @@ auto EpubView::loadFile(const QString& path) -> void
     this->_document = new EPUB::Document(path, this);
     this->_document->open();
 
+    auto mi = this->_document->mmm();
+    qDebug() << "----------------------------------------------";
+    for(auto&& m : mi) qDebug() << m.print();
+    auto pi = this->_document->ppp();
+    qDebug() << "----------------------------------------------";
+    for(auto&& p : pi) qDebug() << p.print();
+
     // test begin
     QFile f("d:/GitHub/epubreader/build/books/test/OEBPS/Text/chapter004.xhtml");
     f.open(QIODevice::ReadOnly);

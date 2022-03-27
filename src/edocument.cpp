@@ -27,12 +27,10 @@ Document::~Document() { }
 auto Document::open() -> bool
 {
     UnZipStream* unZip = new UnZipStream(this->_fileName);
-    QByteArray tableOfContent;
-    QByteArray fileListener;
-    QByteArray metaIndoFile;
 
     if(unZip->canRead())
     {
+        // save files to local, if don't on ram
         const QStringList entries = unZip->fileList();
         DataMap allFiles = unZip->listData();
         for(auto it = allFiles.begin(); it != allFiles.end(); ++it)
@@ -57,48 +55,33 @@ auto Document::open() -> bool
             }
             else if(METAINFOCONTAINERFILE == name)
             {
-                this->_nextFileToReadXmlChunk = chunk;
+                if(chunk.size() < 4) return false;
+                if(this->metaReader(chunk))
+                {
+                    EPUBDEBUG() << "rspine: " << this->_rspine << '\n'
+                                << "coverPager: " << this->_coverPager << '\n'
+                                << "fileTiele: " << this->_fileTitle << '\n'
+                                << "minNrorder: " << this->_minNrorder << '\n'
+                                << "maxNrorder: " << this->_maxNrorder << '\n'
+                                << "pageItem: " << this->_pageItem.size() << '\n'
+                                << "menuItem: " << this->_menuItem.size() << '\n'
+                                << "rspine size: " << this->_rspine.size() << '\n';
+                    this->_opened = true;
+                    return true;
+                }
             }
             this->_cache.insert(name, chunk);
             // this->saveFile(name, it);
         }
     }
-
     delete unZip;
     unZip = nullptr;
-
-    if(this->_nextFileToReadXmlChunk.size() < 4) return false;
-    else
-    {
-        bool ojbk = this->metaReader();
-        if(not this->_baseRefDir.isEmpty())
-        {
-            EPUBDEBUG() << "BASEREFDIR: " << this->_baseRefDir;
-        }
-        {
-            EPUBDEBUG() << "rspine: " << this->_rspine << '\n'
-                        << "coverPager: " << this->_coverPager << '\n'
-                        << "fileTiele: " << this->_fileTitle << '\n'
-                        << "minNrorder: " << this->_minNrorder << '\n'
-                        << "maxNrorder: " << this->_maxNrorder << '\n'
-                        << "pageItem: " << this->_pageItem.size() << '\n'
-                        << "menuItem: " << this->_menuItem.size() << '\n'
-                        << "rspine size: " << this->_rspine.size() << '\n';
-        }
-
-        if(ojbk) this->pageBuilder();
-        if(this->_revisionPageItem.size() > 1) 
-        {
-            this->_opened = true;
-            return true;
-        }
-    }
     return false;
 }
 
-auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
+auto Document::getDomElementFromXml(const QByteArray& xml) -> QDomElement
 {
-    EPUBDEBUG() << "make2DomElementXmlFile fiel: " << this->_nextFileToReadCrono;
+    EPUBDEBUG() << "getDomElementFromXml fiel: " << this->_nextFileToReadCrono;
 
     QDomDocument root;
     if(xml.size() < 5) return root.createElement("root");
@@ -114,19 +97,13 @@ auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
     if(document.setContent(&source, &reader, &eErrorMsg))
     {
         node = document.documentElement();
-        EPUBDEBUG() << "sucess make2DomElementXmlFile first tagName: " << node.tagName();
+        EPUBDEBUG() << "sucess getDomElementFromXml first tagName: " << node.tagName();
         return node;
     }
-    else
-    {
-        EPUBWARNING() << "make2DomElementXmlFile unable to read xml file ... " << eErrorMsg;
-    }
+
+    EPUBWARNING() << "getDomElementFromXml unable to read xml file ... " << eErrorMsg;
     return root.createElement("root");
 }
-
-auto Document::images() const -> DataMap { return this->_imageData; }
-
-auto Document::structure() const -> DataMap { return this->_cache; }
 
 auto Document::removeFromRam(const QString fileName) -> bool
 {
@@ -151,196 +128,16 @@ auto Document::removeFromRam(const QString fileName) -> bool
     return false;
 }
 
-auto Document::lostFoundSyncro() -> void
+auto Document::metaReader(QByteArray& xml) -> bool
 {
-    for(auto&& fox : this->_pageItem)
-    {
-        const QString urlZip = fox.qurl();
-        if(this->_uniqueuris.contains(urlZip))
-        {
-            this->_uniqueuris.remove(urlZip);
-        }
-
-        EPUBDEBUG() << "page item set: " << fox.debug();
-    }
-
-    for(auto&& fox : this->_menuItem)
-    {
-        const QString urlZip = fox.qurl();
-        if(this->_uniqueuris.contains(urlZip))
-        {
-            this->_uniqueuris.remove(urlZip);
-        }
-
-        EPUBDEBUG() << "menu item set: " << fox.debug();
-    }
-
-    this->_imageData.clear();
-    this->_cache.clear();
-}
-
-auto Document::pageBuilder() -> void
-{
-    this->lostFoundSyncro();
-    QSet<QString> uniqueurlSet;
-    QString zUrl;
-    QString tmp1, tmp2;
-    QString idRef;
-    const int pageNum{ (this->_maxNrorder - this->_minNrorder) + 2 };
-    const int epubSize{ this->_menuItem.size() };
-    const int qustSize{ this->_uniqueuris.size() };
-    const int pagesSize{ this->_pageItem.size() };
-    EPUBDEBUG() << "pageBuilder tot: " << pagesSize
-                << ", diff: " << pageNum
-                << ": " << epubSize
-                << " - remainfile" << qustSize;
-    EpubToc coverfox;
-    for(int i{0}; i < this->_rspine.count(); ++i)
-    {
-        idRef = this->_rspine.at(i);
-        EpubToc fox;
-        EpubToc foxMenu;
-        this->getPageOrderID(idRef, fox);
-        fox.orderid = i;
-        this->getPageKeyMd843(fox.md843, foxMenu);
-        tmp1 = this->_bookPath + fox.qurl();
-        QFileInfo fi(tmp1);
-        const QString boxUrl = fi.absoluteFilePath();
-        if(fi.exists() and not uniqueurlSet.contains(boxUrl))
-        {
-            fox.jumpUrl = boxUrl;
-            uniqueurlSet.insert(boxUrl);
-            fox.title = foxMenu.title;
-            if(fox.title.isEmpty())
-            {
-                fox.title = QString("Page - Unkonw Title / or not set");
-            }
-            this->_revisionPageItem.append(fox);
-            EPUBDEBUG() << this->_revisionPageItem.size()
-                        << "/" << idRef
-                        << ") GoTo refister: " << fox.debug()
-                        << "_" << fi.absoluteFilePath();
-        }
-        int listers{-1};
-        for(auto&& fox :  this->_pageItem)
-        {
-            ++listers;
-            tmp1 = this->_bookPath + fox.qurl();
-            QFileInfo fi(tmp1);
-            const QString boxUrl = fi.absoluteFilePath();
-            if(fi.exists() and not uniqueurlSet.contains(boxUrl))
-            {
-                fox.orderid = this->_revisionPageItem.count();
-                fox.jumpUrl = boxUrl;
-                uniqueurlSet.insert(boxUrl);
-                fox.title = QString("Hidden/Listed page: %1").arg(fox.title);
-                if(fox.title.isEmpty())
-                {
-                    fox.title = QString("Page - Unkonw Title / or not set");
-                }
-                this->_revisionPageItem.append(fox);
-                EPUBDEBUG() << this->_revisionPageItem.size()
-                            << "/" << idRef
-                            << ") GoTo refister: " << fox.debug()
-                            << "_" << fi.absoluteFilePath();                
-            }
-        }
-    }
-    QStringList lostList = uniqueurlSet.toList();
-    EPUBDEBUG() << "!!! lost & found size: " << lostList.size();
-    for(auto&& lost: lostList)
-    {
-        EPUBDEBUG() << "!!! lost & found page: " << lost;
-    }
-}
-
-auto Document::getPageKeyMd843(const int idmd, EpubToc& item) -> void
-{
-    for(auto&& fox : this->_menuItem)
-    {
-        if(idmd == fox.md843)
-        {
-            if(this->_uniqueuris.contains(fox.qurl()))
-            {
-                this->_uniqueuris.remove(fox.qurl());
-            }
-            item = fox;
-        }
-    }
-}
-
-auto Document::getMenuOrderID(const int x, EpubToc& item) -> void
-{
-    for(auto&& fox : this->_menuItem)
-    {
-        if(x == fox.orderid)
-        {
-            if(this->_uniqueuris.contains(fox.qurl()))
-            {
-                this->_uniqueuris.remove(fox.qurl());
-            }
-            item = fox;
-        }
-    }
-}
-
-auto Document::getPageOrderID(const QString ref, EpubToc& item) -> void
-{
-    bool found{false};
-    for(auto&& fox : this->_pageItem)
-    {
-        if(ref == fox.idref)
-        {
-            if(this->_uniqueuris.contains(fox.qurl()))
-            {
-                this->_uniqueuris.remove(fox.qurl());
-            }
-            found = true;
-            item = fox;
-            break;
-        }
-    }
-    if(not found)
-    {
-        for(auto&& fox : this->_menuItem)
-        {
-            if(ref == fox.idref)
-            {
-                if(this->_uniqueuris.contains(fox.qurl()))
-                {
-                    this->_uniqueuris.remove(fox.qurl());
-                }
-                found = true;
-                item = fox;
-                break;
-            }
-        }
-    }
-
-    if(not found)
-    {
-        EPUBWARNING() << "unable to get id from page " << ref;
-    }
-}
-
-auto Document::metaReader() -> bool
-{
-    EPUBDEBUG() << "meta reader only read & follow:" << METAINFOCONTAINERFILE
-                << "function: " << __FUNCTION__
-                << " line:" << __LINE__;
-    const QByteArray xml = this->_nextFileToReadXmlChunk;
     this->_nextFileToReadCrono = METAINFOCONTAINERFILE;
-    bool xvalid{false};
-    QString tmp0, tmp1, tmp2;
-    QString uricontents;
-    QDomElement root = this->make2DomElementXmlFile(this->_nextFileToReadXmlChunk);
+    bool ret{false};
+    QDomElement root = this->getDomElementFromXml(xml);
     QDomNodeList der = root.elementsByTagName("rootfile");
     if(der.count() < 1)
     {
-        EPUBDEBUG() << __FUNCTION__ << " ERROR: der.count():"
-                    << der.count() << " line:" << __LINE__;
         EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
-        return xvalid;
+        return ret;
     }
 
     this->removeFromRam(this->_nextFileToReadCrono);
@@ -366,7 +163,7 @@ auto Document::metaReader() -> bool
     for(int i{0}; i < itemlist.count(); ++i) 
     {
         QDomElement nodepager = itemlist.at(i).toElement();
-        if (this->fileListRecord(nodepager)) xvalid = true;
+        if (this->fileListRecord(nodepager)) ret = true;
         else return false;
     }
 
@@ -390,8 +187,8 @@ auto Document::metaReader() -> bool
     }
     if (1 == navitom.count())
     {
-        QDomElement erlem = navitom.at(0).toElement();
-        xvalid = this->readMenu(erlem);
+        QDomElement elem = navitom.at(0).toElement();
+        ret = this->readMenu(elem);
     }
     EPUBDEBUG() << "get toc.ncx  end delete navMap " << this->_nextFileToReadCrono << __LINE__;
     this->removeFromRam(this->_nextFileToReadCrono);
@@ -403,7 +200,7 @@ auto Document::metaReader() -> bool
     }
     else if (this->cacheFinder(this->_nextFileToReadCrono))
     {
-        xvalid = true;
+        ret = true;
     }
     else
     {
@@ -487,7 +284,7 @@ auto Document::metaReader() -> bool
     }
     else
     {
-        xvalid = true;
+        ret = true;
     }
     if(this->_startIndexPager.isEmpty())
     {
@@ -497,7 +294,7 @@ auto Document::metaReader() -> bool
     {
         this->_coverPager = QString("makecoer_cmd");
     }
-    return xvalid;
+    return ret;
 }
 
 auto Document::cacheFinder(const QString findFile) -> bool
@@ -623,14 +420,12 @@ auto Document::getPageName(const QString fileName, const QString tag) -> QDomNod
     EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName << " : " << tag << " current actioncycle.";
 
     QDomNodeList defineterror;
-    QString tmp;
     for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
     {
         if(it.key() == fileName)
         {
             QByteArray chunx = it.value();
-            QDomElement e = this->make2DomElementXmlFile(chunx);
-            tmp = e.tagName();
+            QDomElement e = this->getDomElementFromXml(chunx);
             QDomNodeList der = e.elementsByTagName(tag);
             QDomNodeList dera = e.elementsByTagName(e.tagName());
 

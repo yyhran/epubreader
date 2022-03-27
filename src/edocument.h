@@ -89,18 +89,13 @@ public:
     auto open() -> bool;
     auto opened() const -> bool { return this->_opened; }
     auto menuList() const -> QList<EpubToc> { return this->_revisionPageItem; }
+    auto mmm() const -> QList<EpubToc> { return this->_menuItem; }
+    auto ppp() const -> QList<EpubToc> { return this->_pageItem; }
 
 private:
-    auto make2DomElementXmlFile(const QByteArray xml) -> QDomElement;
-    auto images() const -> DataMap;
-    auto structure() const -> DataMap;
+    auto getDomElementFromXml(const QByteArray& xml) -> QDomElement;
     auto removeFromRam(const QString fileName) -> bool;
-    auto lostFoundSyncro() -> void;
-    auto pageBuilder() -> void;
-    auto getPageKeyMd843(const int idmd, EpubToc& item) -> void;
-    auto getMenuOrderID(const int x, EpubToc& item) -> void;
-    auto getPageOrderID(const QString ref, EpubToc& item) -> void;
-    auto metaReader() -> bool;
+    auto metaReader(QByteArray& xml) -> bool;
     auto cacheFinder(const QString findFile) -> bool;
     auto readMenu(const QDomElement& element) -> bool;
     auto getPageName(const QString fileName, const QString tag = "body") -> QDomNodeList;
@@ -122,8 +117,6 @@ private:
     QList<EpubToc> _revisionPageItem;
     QString _fileName;
     QString _fileTitle;
-    QByteArray _eContent;
-    QString _errorString;
     QString _flyID;
     QString _flyOrder;
     QString _flyUrl;
@@ -134,7 +127,6 @@ private:
     QString _baseRefDir;
     QString _nextFileToReadCrono;
     QString _bookPath;
-    QByteArray _nextFileToReadXmlChunk;
     bool _useBaseRef;
     int _minNrorder;
     int _maxNrorder;
