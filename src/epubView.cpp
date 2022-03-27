@@ -1,14 +1,9 @@
 #include "epubView.h"
 
 EpubView::EpubView(QWidget* parent)
-    : QTextBrowser(parent)
-    , _moduNow(1)
+    : QWidget(parent)
 {
-    this->setMinimumWidth(400);
-    this->setMinimumHeight(400);
-    this->setContentsMargins(0, 0, 0, 0);
-
-    this->openEpub(QUrl("file:d:/GitHub/epubreader/res/Mastering.epub"));
+    this->loadFile(QString("file:d:/GitHub/epubreader/res/Mastering.epub"));
 }
 
 EpubView::~EpubView()
@@ -16,16 +11,9 @@ EpubView::~EpubView()
 
 }
 
-auto EpubView::weneedTxt() -> void { }
-
-auto EpubView::playFile(const QUrl localRemote) -> void
+auto EpubView::loadFile(const QString& path) -> void
 {
-    qDebug() << "open: " << localRemote;
-    this->openEpub(localRemote);
-}
-
-auto EpubView::openEpub(const QUrl urie) -> void
-{
+    /*
     this->_playEpub = new EPUB::Converter();
     const QString ebookFile = urie.toLocalFile();
     qDebug() << "ebook file: " << ebookFile;
@@ -39,19 +27,30 @@ auto EpubView::openEpub(const QUrl urie) -> void
         qDebug() << "file url: " << fox.jumpUrl;
         emit this->paintMenuEpub(true);
     }
+    */
 }
 
-auto EpubView::jumpEpub(const QUrl urie) -> void
+auto EpubView::scroll(int amount) -> void
 {
+    int offset = this->_offset + amount;
+    
+    this->update();
 }
-
-auto EpubView::startHtmlGrab(bool ok) -> void
+auto EpubView::scrollPage(int amount) -> void
 {
-    if(ok)
-    {
-
-    }
+    int currentPage = this->_offset / 1;
+    currentPage += amount; 
+    this->update();
 }
-auto EpubView::handleHtml(QString sHtml) -> void
+void EpubView::paintEvent(QPaintEvent* e)
 {
+    QPainter painter(this);
+}
+void EpubView::keyPressEvent(QKeyEvent* e) 
+{
+
+}
+void EpubView::resizeEvent(QResizeEvent* e)
+{
+
 }

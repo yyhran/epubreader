@@ -75,13 +75,13 @@ struct EpubToc
 
 namespace EPUB {
 
-class Document
+class Document : public QTextDocument
 {
 public:
     using DataMap = QMap<QString, QByteArray>;
     using DataMapIterator = QMapIterator<QString, QByteArray>;
 
-    Document(const QString& fileName, const QString& dir);
+    Document(const QString& fileName, QObject* parent = Q_NULLPTR);
     ~Document();
 
     auto open() -> bool;
@@ -133,7 +133,7 @@ private:
     QString _rootFollowFromFile;
     QString _baseRefDir;
     QString _nextFileToReadCrono;
-    QString _dirBrowserBook;
+    QString _bookPath;
     QByteArray _nextFileToReadXmlChunk;
     bool _useBaseRef;
     int _summerror;

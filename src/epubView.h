@@ -43,24 +43,9 @@
 #include <QDateTime>
 #include <QTextBrowser>
 #include <QDate>
+#include <QPainter>
 
 #include "econverter.h"
-
-#define WEBAGENTNAME "Google"
-#define _PROGRAM_NAME_ QString("KernelApp")
-#define _PROGRAM_NAME_DOMAINE_ QString("qt.io")
-#define _ORGANIZATION_NAME_ QString("Avasoft")
-#define _PROGRAM_VERSION_ QString("version 0.2.1 / go git")
-#define _PROGRAM_OWNER_ QString("version 0.2.1")
-#define _PROGRAM_TITLE_ QString("TestApp")
-#define _PROGRAM_SHORT_NAME QString("docsrc_test")
-#define TUMBNAIL_SIZE 120
-#define ICONSW_SIZE 50
-// #define _ZIPCACHEBOOK_ QString("%1/ebooks/fromlocal/").arg(QDir::homePath())
-#define _ZIPCACHEBOOK_ QString("d:/GitHub/epubreader/build/ebooks/fromlocal/")
-#define _FIRSTWINDOWTITLESHOW_ QString("Blabbering Ebooks & Document")
-#define _TESTBOOKS_ QString("%1/tmp/").arg(_ZIPCACHEBOOK_)
-#define core_application (static_cast<RDoc *>(QCoreApplication::instance()))
 
 struct VoiceDocument
 {
@@ -96,7 +81,7 @@ struct VoiceDocument
     bool local;
 };
 
-class EpubView : public QTextBrowser
+class EpubView : public QWidget 
 {
     Q_OBJECT
 
@@ -104,40 +89,19 @@ public:
     explicit EpubView(QWidget* parent = 0);
     ~EpubView();
 
-    auto readerMenu() -> QList<EpubToc> { return this->_activeEpub; }
-    auto plainText() -> QString { return this->_text2Voice; }
-    auto currentDoc() -> VoiceDocument { return this->_vcurrent; }
-    auto weneedTxt() -> void;
-
-signals:
-    void paintMenuEpub(bool);
-    void htmlReady();
-    void vdocReady();
-    void incomHtml();
-
-public slots:
-    void playFile(const QUrl localRemote);
-    void openEpub(const QUrl urie);
-    void jumpEpub(const QUrl urie);
-    void startHtmlGrab(bool ok);
-    void handleHtml(QString sHtml);
+    auto loadFile(const QString& path) -> void;
 
 protected:
-    auto rollContext(const QPoint& pos) -> void;
-    auto centextMenuEvent(QContextMenuEvent* event);
-
-protected:
-    QString _htmlSource;
-    QString _text2Voice;
-    QString _doctitle;
+    void paintEvent(QPaintEvent* e) override;
+    void keyPressEvent(QKeyEvent* e) override;
+    void resizeEvent(QResizeEvent* e) override;
 
 private:
-    int _moduNow;
-    QSet<QString> _uniqueVdoc;
-    QList<VoiceDocument> _voiceHistory;
-    QList<EpubToc> _activeEpub;
-    EPUB::Converter* _playEpub;
-    VoiceDocument _vcurrent;
+    auto scroll(int amount) -> void;
+    auto scrollPage(int amount) -> void;
+
+private:
+    int _offset;
 };
 
 #endif // __EPUB__VIEW__H

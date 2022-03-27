@@ -2,8 +2,9 @@
 
 namespace EPUB {
 
-Document::Document(const QString& fileName, const QString& dir)
-    : _fileName(fileName)
+Document::Document(const QString& fileName, QObject* parent)
+    : QTextDocument(parent)
+    , _fileName(fileName)
     , _coverPager("")
     , _startIndexPager("")
     , _useBaseRef(false)
@@ -14,9 +15,9 @@ Document::Document(const QString& fileName, const QString& dir)
 {
     QFileInfo fileInfo(fileName);
     QString name = fileInfo.baseName();
-    this->_dirBrowserBook = QCoreApplication::applicationDirPath() + "/books/" + name + "/";
+    this->_bookPath = QCoreApplication::applicationDirPath() + "/books/" + name + "/";
     EPUBDEBUG() << "fileName: " << name;
-    EPUBDEBUG() << "dirBrowserBook: " << this->_dirBrowserBook;
+    EPUBDEBUG() << "bookPath: " << this->_bookPath;
 }
 
 Document::~Document() { }
@@ -34,16 +35,7 @@ auto Document::open() -> bool
         DataMap allFiles = unZip->listData();
         for(auto it = allFiles.begin(); it != allFiles.end(); ++it)
         {
-            QByteArray chunk;
-            QByteArray stream = it.value();
-            if(this->_compressOnRam)
-            {
-                chunk = qCompress(stream);
-            }
-            else
-            {
-                qSwap(chunk, stream);
-            }
+            QByteArray chunk = it.value();
 
             QString name(it.key());
             EPUBDEBUG() << "file zip in: " << name;
@@ -61,20 +53,11 @@ auto Document::open() -> bool
             {
                 this->_styleData.insert(name, it.value());
             }
-
-            QImage pic = QImage::fromData(it.value());
-            if(not pic.isNull())
+            else if(METAINFOCONTAINERFILE == name)
             {
-                this->_imageData.insert(name, chunk);
+                this->_nextFileToReadXmlChunk = chunk;
             }
-            else
-            {
-                if(METAINFOCONTAINERFILE == name)
-                {
-                    this->_nextFileToReadXmlChunk = chunk;
-                }
-                this->_cache.insert(name, chunk);
-            }
+            this->_cache.insert(name, chunk);
             this->saveFile(name, it);
         }
     }
@@ -91,14 +74,14 @@ auto Document::open() -> bool
             EPUBDEBUG() << "BASEREFDIR: " << this->_baseRefDir;
         }
         {
-            EPUBDEBUG() << "rspine: " << this->_rspine;
-            EPUBDEBUG() << "coverPager: " << this->_coverPager;
-            EPUBDEBUG() << "fileTiele: " << this->_fileTitle;
-            EPUBDEBUG() << "minNrorder: " << this->_minNrorder;
-            EPUBDEBUG() << "maxNrorder: " << this->_maxNrorder;
-            EPUBDEBUG() << "pageItem: " << this->_pageItem.size();
-            EPUBDEBUG() << "menuItem: " << this->_menuItem.size();
-            EPUBDEBUG() << "rspine size: " << this->_rspine.size();
+            EPUBDEBUG() << "rspine: " << this->_rspine << '\n'
+                        << "coverPager: " << this->_coverPager << '\n'
+                        << "fileTiele: " << this->_fileTitle << '\n'
+                        << "minNrorder: " << this->_minNrorder << '\n'
+                        << "maxNrorder: " << this->_maxNrorder << '\n'
+                        << "pageItem: " << this->_pageItem.size() << '\n'
+                        << "menuItem: " << this->_menuItem.size() << '\n'
+                        << "rspine size: " << this->_rspine.size() << '\n';
         }
         EPUBDEBUG() << "total error: " << this->_summerror;
         if(this->_summerror > 0)
@@ -133,7 +116,6 @@ auto Document::make2DomElementXmlFile(const QByteArray xml) -> QDomElement
     else source.setData(xml);
 
     QString eErrorMsg;
-    QString tmp1, tmp2;
     QDomDocument document;
     if(document.setContent(&source, &reader, &eErrorMsg))
     {
@@ -172,7 +154,6 @@ auto Document::removeFromRam(const QString fileName) -> bool
             }
         }
     }
-
     return false;
 }
 
@@ -228,7 +209,7 @@ auto Document::pageBuilder() -> void
         this->getPageOrderID(idRef, fox);
         fox.orderid = i;
         this->getPageKeyMd843(fox.md843, foxMenu);
-        tmp1 = this->_dirBrowserBook + fox.qurl();
+        tmp1 = this->_bookPath + fox.qurl();
         QFileInfo fi(tmp1);
         const QString boxUrl = fi.absoluteFilePath();
         if(fi.exists() and not uniqueurlSet.contains(boxUrl))
@@ -250,7 +231,7 @@ auto Document::pageBuilder() -> void
         for(auto&& fox :  this->_pageItem)
         {
             ++listers;
-            tmp1 = this->_dirBrowserBook + fox.qurl();
+            tmp1 = this->_bookPath + fox.qurl();
             QFileInfo fi(tmp1);
             const QString boxUrl = fi.absoluteFilePath();
             if(fi.exists() and not uniqueurlSet.contains(boxUrl))
@@ -749,7 +730,7 @@ auto Document::fileListRecord(const QDomElement e) -> bool
 
 auto Document::saveFile(const QString& name, DataMap::iterator& data) -> void
 {
-    QString savePath = this->_dirBrowserBook + name;
+    QString savePath = this->_bookPath + name;
     QString dirPath = savePath.left(savePath.lastIndexOf("/")) + "/";
     QDir dir(dirPath);
     if(not dir.exists()) dir.mkpath(dirPath);

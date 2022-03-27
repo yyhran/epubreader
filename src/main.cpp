@@ -11,7 +11,5 @@ int main(int argc, char** argv)
 
     EpubView e;
     e.show();
-    auto data = e.readerMenu();
-    qDebug() << "*data size: " << data.size();
     return a.exec();
 }
