@@ -104,7 +104,7 @@ auto Document::setF(const QString& fileName) -> void
     }
     else
     {
-        QFile f("D:/GitHub/epubreader/build/books/test/OEBPS/Text/chapter005.xhtml");
+        QFile f("D:/GitHub/epubreader/build/books/Mastering/index_split_002.html");
         if(f.exists())
         {
             if(f.open(QIODevice::ReadWrite))
@@ -211,13 +211,16 @@ auto Document::readMenu(const QDomElement& element) -> bool
 
     while(not child.isNull())
     {
-        EpubToc toc;
-        toc.order = child.attribute("playOrder").toInt();
-        QDomElement tmp = child.firstChildElement();
-        toc.text = tmp.firstChildElement().firstChild().toText().data();
-        toc.src = tmp.nextSiblingElement().attribute("src");
-        this->_toc.append(toc);
-        this->readMenu(child);
+        if("navPoint" == child.tagName())
+        {
+            EpubToc toc;
+            toc.order = child.attribute("playOrder").toInt();
+            QDomElement tmp = child.firstChildElement();
+            toc.text = tmp.firstChildElement().firstChild().toText().data();
+            toc.src = tmp.nextSiblingElement().attribute("src");
+            this->_toc.append(toc);
+            this->readMenu(child);
+        }
         child = child.nextSiblingElement();
     }
     return true;
