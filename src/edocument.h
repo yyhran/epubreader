@@ -70,7 +70,6 @@ private:
     QString _fileName;
     QString _bookTitle;
     QString _coverPager;
-    QString _cssPath;
     QString _imgPath;
     QString _baseRefDir;
     QString _bookPath;

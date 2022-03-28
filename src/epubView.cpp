@@ -23,13 +23,13 @@ auto EpubView::loadFile(const QString& path) -> void
     auto meta = this->_document->getMeta();
     for(auto it = meta.begin(); it != meta.end(); ++it)
     {
-        qDebug() << it.key() << ": " << it.value().join('\n');
+        qDebug() << it.key() << ": " << it.value();
     }
 
     auto toc = this->_document->getToc();
     for(auto&& t : toc)
     {
-        t.print();
+        // t.print();
     }
     // test end
 }

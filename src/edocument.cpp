@@ -48,7 +48,7 @@ auto Document::open() -> bool
                 QFileInfo fileInfo(name);
                 if(QLatin1String("image/jpeg") == mimeType)
                 {
-                    this->_imgPath = this->_bookPath + fileInfo.path() + "/";
+                    if(name.contains("/")) this->_imgPath = this->_bookPath + name.left(name.lastIndexOf("/")) + "/";
                     if(this->_runOnRam)
                     {
                         this->addResource(QTextDocument::ImageResource, QUrl("myData:/" + fileInfo.fileName()), data);
@@ -56,11 +56,7 @@ auto Document::open() -> bool
                 }
                 else if(QLatin1String("text/css") == mimeType)
                 {                                    
-                    this->_cssPath = this->_bookPath + fileInfo.path() + "/";
-                    if(this->_runOnRam)
-                    {
-                        this->addResource(QTextDocument::StyleSheetResource, QUrl("myData:/" + fileInfo.fileName()), data);
-                    }
+                    this->addResource(QTextDocument::StyleSheetResource, QUrl("myData:/" + fileInfo.fileName()), data);
                 }
                 else 
                 {
@@ -95,12 +91,26 @@ auto Document::open() -> bool
 }
 
 auto Document::setF(const QString& fileName) -> void
-{   
-    for(auto it = this->_textData.begin(); it != this->_textData.end(); ++it)
+{
+    if(this->_runOnRam)
     {
-        if(it.key().contains(fileName))
+        for(auto it = this->_textData.begin(); it != this->_textData.end(); ++it)
         {
-            this->setHtml(it.value());
+            if(it.key().contains(fileName))
+            {
+                this->setHtml(it.value());
+            }
+        }
+    }
+    else
+    {
+        QFile f("D:/GitHub/epubreader/build/books/test/OEBPS/Text/chapter005.xhtml");
+        if(f.exists())
+        {
+            if(f.open(QIODevice::ReadWrite))
+            {
+                this->setHtml(f.readAll());
+            }
         }
     }
 }
@@ -207,7 +217,7 @@ auto Document::readMenu(const QDomElement& element) -> bool
         toc.text = tmp.firstChildElement().firstChild().toText().data();
         toc.src = tmp.nextSiblingElement().attribute("src");
         this->_toc.append(toc);
-
+        this->readMenu(child);
         child = child.nextSiblingElement();
     }
     return true;
@@ -215,7 +225,9 @@ auto Document::readMenu(const QDomElement& element) -> bool
 
 auto Document::changePath(const QString& name, QByteArray& xml) -> void
 {
-    QDomElement root = this->getDomElementFromXml(xml);
+    QDomDocument document;
+    document.setContent(xml);
+    QDomElement root = document.documentElement();
     // change css path
     QDomNodeList cssList = root.elementsByTagName("link");
     for(int i{0}; i < cssList.size(); ++i)
@@ -224,7 +236,8 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
         if("text/css" == oldNode.attribute("type"))
         {
             QFileInfo fileInfo(oldNode.attribute("href"));
-            QString path = (this->_runOnRam ? "myData:/" : this->_cssPath) + fileInfo.fileName();
+            // QString path = (this->_runOnRam ? "myData:/" : this->_cssPath) + fileInfo.fileName();
+            QString path = "myData:/" + fileInfo.fileName();
             oldNode.setAttribute("href", path); 
             QDomElement newNode = cssList.at(i).toElement();
             cssList.at(i).replaceChild(newNode, oldNode);
@@ -246,7 +259,7 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
     {
         xml.clear();
         QTextStream out(xml);
-        root.save(out, 2);
+        document.save(out, 2);
     }
     else
     {
@@ -259,7 +272,7 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
         if(file.open(QIODevice::WriteOnly))
         {
             QTextStream out(&file);
-            root.save(out, 2);
+            document.save(out, 2);
         }
     }
 }
