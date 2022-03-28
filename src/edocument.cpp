@@ -6,11 +6,7 @@ Document::Document(const QString& fileName, QObject* parent)
     : QTextDocument(parent)
     , _fileName(fileName)
     , _coverPager("")
-    , _startIndexPager("")
     , _useBaseRef(false)
-    , _minNrorder(10000)
-    , _maxNrorder(0)
-    , _compressOnRam(false)
     , _opened(false)
 {
     QFileInfo fileInfo(fileName);
@@ -53,19 +49,16 @@ auto Document::open() -> bool
             {
                 this->_styleData.insert(name, it.value());
             }
-            else if(METAINFOCONTAINERFILE == name)
+            else 
+            {
+                this->_imageData.insert(name, it.value());
+            }
+
+            if(METAINFOCONTAINERFILE == name)
             {
                 if(chunk.size() < 4) return false;
                 if(this->metaReader(chunk))
                 {
-                    EPUBDEBUG() << "rspine: " << this->_rspine << '\n'
-                                << "coverPager: " << this->_coverPager << '\n'
-                                << "fileTiele: " << this->_fileTitle << '\n'
-                                << "minNrorder: " << this->_minNrorder << '\n'
-                                << "maxNrorder: " << this->_maxNrorder << '\n'
-                                << "pageItem: " << this->_pageItem.size() << '\n'
-                                << "menuItem: " << this->_menuItem.size() << '\n'
-                                << "rspine size: " << this->_rspine.size() << '\n';
                     this->_opened = true;
                     return true;
                 }
@@ -81,236 +74,92 @@ auto Document::open() -> bool
 
 auto Document::getDomElementFromXml(const QByteArray& xml) -> QDomElement
 {
-    EPUBDEBUG() << "getDomElementFromXml fiel: " << this->_nextFileToReadCrono;
-
     QDomDocument root;
     if(xml.size() < 5) return root.createElement("root");
 
-    QDomElement node;
-    QXmlSimpleReader reader;
-    QXmlInputSource source;
-    if(this->_compressOnRam) source.setData(qUncompress(xml));
-    else source.setData(xml);
-
-    QString eErrorMsg;
     QDomDocument document;
-    if(document.setContent(&source, &reader, &eErrorMsg))
+    if(document.setContent(xml, true));
     {
-        node = document.documentElement();
+        QDomElement node = document.documentElement();
         EPUBDEBUG() << "sucess getDomElementFromXml first tagName: " << node.tagName();
         return node;
     }
 
-    EPUBWARNING() << "getDomElementFromXml unable to read xml file ... " << eErrorMsg;
     return root.createElement("root");
-}
-
-auto Document::removeFromRam(const QString fileName) -> bool
-{
-    EPUBDEBUG() << "remove file: " << fileName << " .";
-    for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
-    {
-        if(fileName == it.key())
-        {
-            int ret = this->_cache.remove(fileName); 
-            if(1 == ret)
-            {
-                EPUBDEBUG() << "sucess remove from ram file: " << fileName << " .";
-                return true;
-            }
-            else
-            {
-                EPUBWARNING() << "unable to remove: " << fileName << " from ram cache.";
-                return false;
-            }
-        }
-    }
-    return false;
 }
 
 auto Document::metaReader(QByteArray& xml) -> bool
 {
-    this->_nextFileToReadCrono = METAINFOCONTAINERFILE;
+    QString containerFile{"META-INF/container.xml"};
     bool ret{false};
-    QDomElement root = this->getDomElementFromXml(xml);
+    QDomElement root = this->getDomElementFromXml(this->_metaData[containerFile]);
     QDomNodeList der = root.elementsByTagName("rootfile");
-    if(der.count() < 1)
+    if(0 == der.count())
     {
         EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
         return ret;
     }
+    this->_metaData.remove(containerFile);
+    QString contentFile{""};
 
-    this->removeFromRam(this->_nextFileToReadCrono);
     for(int i{0}; i < der.count(); ++i) 
     {
         QDomElement node = der.at(i).toElement();
-        this->_nextFileToReadCrono = node.attribute("full-path");
-        EPUBDEBUG() << "Start on file:" << this->_nextFileToReadCrono << __LINE__;
+        contentFile = node.attribute("full-path"); // content.opf
+        EPUBDEBUG() << "Start on file:" << contentFile << __LINE__;
     }
 
-    if(this->_nextFileToReadCrono.size() < 1)
+    if(0 == contentFile.size())
     {
         EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
         return false;
     }
-
-    if(this->_nextFileToReadCrono.contains("/"))
+    if(contentFile.contains("/"))
     {
-        this->_baseRefDir = this->_nextFileToReadCrono.left(this->_nextFileToReadCrono.lastIndexOf("/")) + "/";
+        this->_baseRefDir = contentFile.left(contentFile.lastIndexOf("/")) + "/";
     }
 
-    QDomNodeList itemlist = this->getPageName(this->_nextFileToReadCrono, QString("item"));
+    QDomNodeList metaList = this->getPageName(contentFile, QString("metadata"));
+    QDomNodeList list = metaList.at(0).toElement().childNodes();
+    for(int i{0}; i < list.size(); ++i)
+    {
+        QDomNode&& tmp = list.at(i);
+        if("dc" == tmp.prefix())
+        {
+            this->_metaInfo[tmp.localName()] << tmp.firstChild().toText().data();
+        }
+    }
+    QDomNodeList guideList = this->getPageName(contentFile, QString("guide"));
+    this->_coverPager = guideList.at(0).toElement().firstChildElement().attribute("htef");
+
+    QString tocFile{""};
+    QDomNodeList itemlist = this->getPageName(contentFile, QString("item"));
     for(int i{0}; i < itemlist.count(); ++i) 
     {
         QDomElement nodepager = itemlist.at(i).toElement();
-        if (this->fileListRecord(nodepager)) ret = true;
-        else return false;
+        if("ncx" == nodepager.attribute("id"))
+        {
+            tocFile = nodepager.attribute("href");
+        }
     }
+    EPUBDEBUG() << "get toc from  " << tocFile << __LINE__;
 
-    if(this->_useBaseRef)
-    {
-        this->_nextFileToReadCrono = this->_useBaseRef + QString("toc.ncx");
-    }
-    else
-    {
-        this->_nextFileToReadCrono = QString("toc.ncx");
-    }
+    QDomNodeList navitom = this->getPageName(tocFile, "navMap");
 
-    EPUBDEBUG() << "get toc from  " << this->_nextFileToReadCrono << __LINE__;
-    QDomNodeList reffitems = this->getPageName(this->_nextFileToReadCrono, "docTitle");
-    QDomNodeList navitom = this->getPageName(this->_nextFileToReadCrono, "navMap");
-    if(1 == reffitems.count())
-    {
-        QDomElement er = reffitems.at(0).toElement();
-        QDomElement ed = er.firstChildElement();
-        this->_fileTitle = ed.firstChild().toText().data();
-    }
     if (1 == navitom.count())
     {
         QDomElement elem = navitom.at(0).toElement();
         ret = this->readMenu(elem);
     }
-    EPUBDEBUG() << "get toc.ncx  end delete navMap " << this->_nextFileToReadCrono << __LINE__;
-    this->removeFromRam(this->_nextFileToReadCrono);
-    this->_nextFileToReadCrono = this->_baseRefDir + CONTENENTOPFFILE;
-    EPUBDEBUG() << "search  " << CONTENENTOPFFILE << __LINE__;
-    if(this->cacheFinder(CONTENENTOPFFILE))
-    {
-        this->_nextFileToReadCrono = CONTENENTOPFFILE;
-    }
-    else if (this->cacheFinder(this->_nextFileToReadCrono))
-    {
-        ret = true;
-    }
-    else
-    {
-        EPUBWARNING() << "Unable to find file : " << CONTENENTOPFFILE;
-        return false;
-    }
+    this->_metaData.remove(tocFile);
 
-    QDomNodeList dcover = this->getPageName(this->_nextFileToReadCrono, "reference");
-    if(dcover.count() > 0)
-    {
-        for(int i{0}; i < dcover.count(); ++i)
-        {
-            QDomElement node = dcover.at(i).toElement();
-            if(QLatin1String("reference") == node.tagName())
-            {
-                EpubToc dax;
-                QString type = node.attribute("type");
-                QString hrefi = node.attribute("href");
-                dax.idref = node.attribute("id");
-                if(this->_uniqueuris.contains(hrefi))
-                {
-                    this->_uniqueuris.remove(hrefi);
-                }
-                dax.reserve = hrefi;
-                if (this->_useBaseRef)
-                {
-                    hrefi = this->_baseRefDir + node.attribute("href");
-                }
-                if(this->_uniqueuris.contains(hrefi))
-                {
-                    this->_uniqueuris.remove(hrefi);
-                }
-
-                dax.title = node.attribute("title");
-                dax.jumpUrl = QLatin1String("top");
-                dax.zipUrl = hrefi;
-                dax.md843 = genKeyUrl(hrefi);
-                if(QLatin1String("toc") == type)
-                {
-                    dax.type = QString("toc");
-                    dax.orderid = 2;
-                    this->_startIndexPager = dax.title + QString("|") + dax.zipUrl;
-                }
-                else if(QLatin1String("cover") == type)
-                {
-                    dax.type = QString("cover");
-                    dax.orderid = 1;
-                    this->_coverPager = dax.title + QString("|") + dax.zipUrl;
-                }
-                this->_menuItem.append(dax);
-            }
-        }
-    }
-
-    QDomNodeList dspine = this->getPageName(this->_nextFileToReadCrono, "itemref");
-    if(dspine.count() > 0)
-    {
-        for(int i{0}; i < dspine.count(); ++i)
-        {
-            QDomElement node = dspine.at(i).toElement();
-            if (node.tagName() == QLatin1String("itemref"))
-            {
-                QString orderidx = node.attribute("idref");
-                if(orderidx.isEmpty())
-                {
-                    EPUBWARNING() << "Not found  idref to over or init page!";
-                    return false;
-                }
-                if(this->_rspine.size() < this->_pageItem.size())
-                {
-                    this->_rspine << orderidx;
-                }
-            }
-        }
-    }
-
-    this->removeFromRam(this->_nextFileToReadCrono);
     if(this->_coverPager.isEmpty())
     {
         EPUBWARNING() << "Coverpage or StartPage variable is not full! from file " << this->_nextFileToReadCrono;
     }
-    else
-    {
-        ret = true;
-    }
-    if(this->_startIndexPager.isEmpty())
-    {
-        this->_startIndexPager = QString("takefirstpage_cmd");
-    }
-    if (this->_coverPager.isEmpty())
-    {
-        this->_coverPager = QString("makecoer_cmd");
-    }
+    else ret = true;
+
     return ret;
-}
-
-auto Document::cacheFinder(const QString findFile) -> bool
-{
-    EPUBDEBUG() << "CacheFinder:" << findFile << " .";
-
-    bool havigness = false;
-    for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
-    {
-        if(it.key() == findFile)
-        {
-            havigness = true;
-            break;
-        }
-    }
-    return havigness;
 }
 
 auto Document::readMenu(const QDomElement& element) -> bool
@@ -319,97 +168,7 @@ auto Document::readMenu(const QDomElement& element) -> bool
 
     while(not child.isNull())
     {
-        if(child.tagName() == QLatin1String("navPoint"))
-        {
-            this->_flyID = child.attribute("id");
-            this->_flyOrder = child.attribute("playOrder");
-            this->readMenu(child);
-        }
-        else if(child.tagName() == QLatin1String("content"))
-        {
-            if(this->_useBaseRef)
-            {
-                this->_flyUrl = this->_baseRefDir + child.attribute("src");
-            }
-            else
-            {
-                this->_flyUrl = child.attribute("src");
-                if (this->_uniqueuris.contains(this->_flyUrl))
-                {
-                    this->_uniqueuris.remove(this->_flyUrl);
-                }
-            }
-            bool ok;
-            const int idx = this->_flyOrder.toInt(&ok);
-            QString keyuu, urti, tmpurl;
-            if(ok)
-            {
-                if(this->_flyUrl.contains("#"))
-                {
-                    keyuu = this->_flyUrl.left(this->_flyUrl.lastIndexOf("#"));
-                    QStringList io = this->_flyUrl.split(QString("#"));
-                    urti = io.at(1);
-                    if (this->_uniqueuris.contains(urti))
-                    {
-                        this->_uniqueuris.remove(urti);
-                    }
-                    if (this->_uniqueuris.contains(keyuu))
-                    {
-                        this->_uniqueuris.remove(keyuu);
-                    }
-                }
-                else
-                {
-                    keyuu = this->_flyUrl;
-                    urti = QString("toc") + QString::number(genKeyUrl(this->_flyUrl));
-                }
-
-                if (this->_uniqueuris.contains(keyuu))
-                {
-                    this->_uniqueuris.remove(keyuu);
-                }
-                EpubToc dax;
-                dax.title = this->_flyUrl;
-                dax.type = QLatin1String("toclist");
-                dax.jumpUrl = urti;
-                dax.zipUrl = keyuu;
-                dax.reserve = this->_flyUrl;
-                dax.orderid = idx + 2;
-                dax.md843 = genKeyUrl(keyuu);
-                this->_menuItem.prepend(dax);
-                this->_minNrorder = qMin(this->_minNrorder, idx);
-                this->_maxNrorder = qMax(this->_maxNrorder, idx);
-            }
-            else
-            {
-                EPUBDEBUG() << this->_flyName << " to int fail not insert...";
-            }
-            this->readMenu(child);
-        }
-        else if(QLatin1String("navLabel") == child.tagName())
-        {
-            this->readMenu(child);
-        }
-        else if(QLatin1String("text") == child.tagName())
-        {
-            this->_flyName = child.firstChild().toText().data();
-        }
-        else if (child.isText())
-        {
-            EPUBDEBUG() << "ERROR...!";
-        }
-        else if (QLatin1String("manifest") == child.tagName())
-        {
-            this->readMenu(child);
-        }
-        else if (QLatin1String("item") == child.tagName())
-        {
-            this->fileListRecord(child);
-        }
-        else
-        {
-            EPUBDEBUG() << "not know tag  :" << child.tagName();
-        }
+        
         child = child.nextSiblingElement();
     }
     return true;
@@ -420,104 +179,19 @@ auto Document::getPageName(const QString fileName, const QString tag) -> QDomNod
     EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName << " : " << tag << " current actioncycle.";
 
     QDomNodeList defineterror;
-    for(auto&& it = this->_cache.begin(); it != this->_cache.end(); ++it)
-    {
-        if(it.key() == fileName)
-        {
-            QByteArray chunx = it.value();
-            QDomElement e = this->getDomElementFromXml(chunx);
-            QDomNodeList der = e.elementsByTagName(tag);
-            QDomNodeList dera = e.elementsByTagName(e.tagName());
 
-            if(der.count() > 0) return der;
-            else if(dera.count() > 0) return dera;
-        }
-    }
+    QByteArray chunx = this->_metaData[fileName]; 
+    if(0 == chunx.size()) return defineterror;
+
+    QDomElement e = this->getDomElementFromXml(chunx);
+    QDomNodeList der = e.elementsByTagName(tag);
+    QDomNodeList dera = e.elementsByTagName(e.tagName());
+
+    if(der.count() > 0) return der;
+    else if(dera.count() > 0) return dera;
+
     EPUBDEBUG() << "Request Error: " << fileName << ":" << tag << " export FAIL!....";
     return defineterror;
-}
-
-auto Document::fileListRecord(const QDomElement e) -> bool
-{
-    if(QLatin1String("item") != e.tagName()) return false;
-
-    const QString xid = e.attribute("id");
-    const QString xhref = e.attribute("href");
-    const QString basexhref = this->_baseRefDir + e.attribute("href");
-    const QString xmedia = e.attribute("media-type");
-
-    if(xid.isEmpty())
-    {
-        EPUBWARNING() << "Not found attributes id in item tag from content.opf";
-    }
-
-    if(xmedia.isEmpty())
-    {
-        EPUBWARNING() << "Not found attributes media-type in item tag from content.opf";
-    }
-    if(xhref.isEmpty())
-    {
-        EPUBWARNING() << "Not found attributes href in item tag from content.opf";
-    }
-
-    if(xmedia.contains(QLatin1String("image/")))
-    {
-        if(this->_imageData.contains(xhref))
-        {
-            this->_recImages << xhref;
-        }
-        else
-        {
-            if(this->_imageData.contains(basexhref))
-            {
-                this->_useBaseRef = true;
-            }
-            else
-            {
-                EPUBWARNING() << "Nofile: " << this->_rootFollowFromFile
-                              << " from META-INF/container.xml:-> !!" << xhref;
-            }
-        }
-    }
-    else if(xmedia.contains(QLatin1String("application/xhtml")))
-    {
-        if(this->_cache.contains(xhref))
-        {
-            EpubToc dax;
-            dax.title = QLatin1String("Unknow Title");
-            dax.type = QLatin1String("xhtml");
-            dax.jumpUrl = xid;
-            dax.idref = xid;
-            dax.md843 = genKeyUrl(xhref);
-            dax.zipUrl = xhref;
-            dax.reserve = xhref;
-            dax.orderid = 0;
-            this->_pageItem.append(dax);
-        }
-        else
-        {
-            if(this->_cache.contains(basexhref))
-            {
-                this->_useBaseRef = true;
-                EpubToc dax;
-                dax.title = QLatin1String("Unknow Title");
-                dax.type = QLatin1String("xhtml");
-                dax.jumpUrl = xid;
-                dax.idref = xid;
-                dax.md843 = genKeyUrl(basexhref);
-                dax.zipUrl = basexhref;
-                dax.reserve = xhref;
-                dax.orderid = 0;
-                this->_pageItem.append(dax);
-            }
-            else
-            {
-                EPUBWARNING() << "Nofile: " << this->_rootFollowFromFile
-                              << "from META-INF/container.xml:-> !!" << xhref;
-            }
-        }
-    }
-    return true;
 }
 
 auto Document::saveFile(const QString& name, DataMap::iterator& data) -> void
