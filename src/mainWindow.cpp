@@ -105,6 +105,29 @@ auto MainWindow::openFile() -> void
 auto MainWindow::setToc() -> void
 {
     this->_treeWidget->clear();
-    auto tocData = this->_epubView->getToc();
+    this->_metaInfo.clear();
+    this->_tocMap.clear();
 
+    this->_metaInfo = this->_epubView->getMetaInfo();
+    this->_treeWidget->headerItem()->setText(0, this->_metaInfo["title"].toStdList().front());
+
+    auto tocData = this->_epubView->getToc();
+    QMap<QString, QTreeWidgetItem*> tocMap;
+    for(auto&& data : tocData)
+    {
+        this->_tocMap.insert(data.text, data);
+        auto text = data.text;
+        auto upper = data.upper;
+        QTreeWidgetItem* item = Q_NULLPTR;
+        if("" == upper)
+        {
+            item = new QTreeWidgetItem(this->_treeWidget, QStringList(text));
+        }
+        else
+        {
+            item = new QTreeWidgetItem(tocMap[upper], QStringList(text));
+        }
+        tocMap.insert(text, item);
+    }
+    tocMap.clear();
 }

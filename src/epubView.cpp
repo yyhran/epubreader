@@ -19,20 +19,7 @@ auto EpubView::loadFile(const QString& path) -> void
     delete this->_document;
     this->_document = new Document(path, this);
 
-    // test begin
     this->_document->setF("chapter004");
-    auto meta = this->_document->getMeta();
-    for(auto it = meta.begin(); it != meta.end(); ++it)
-    {
-        qDebug() << it.key() << ": " << it.value();
-    }
-
-    auto toc = this->_document->getToc();
-    for(auto&& t : toc)
-    {
-        // t.print();
-    }
-    // test end
 }
 
 auto EpubView::scroll(int amount) -> void

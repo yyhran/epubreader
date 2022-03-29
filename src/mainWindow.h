@@ -11,12 +11,16 @@
 #include <QDebug>
 #include <QLabel>
 #include <QDockWidget>
+
 #include "epubView.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
+    using TocMap = QMap<QString, EPUB::EpubToc>;
+    using MetaInfo = EPUB::Document::MetaInfo;
+
     MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
@@ -37,6 +41,8 @@ private:
     QStackedWidget* _stackedWidget;
     QTreeWidget* _treeWidget;
     EPUB::EpubView* _epubView;
+    MetaInfo _metaInfo;
+    TocMap _tocMap;
 };
 
 #endif // __MAIN_WINDOW__H

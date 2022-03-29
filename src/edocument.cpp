@@ -206,21 +206,21 @@ auto Document::metaReader(QByteArray& xml) -> bool
     return ret;
 }
 
-auto Document::readMenu(const QDomElement& element) -> bool
+auto Document::readMenu(const QDomElement& element, const QString& text) -> bool
 {
     QDomElement child = element.firstChildElement();
-
     while(not child.isNull())
     {
         if("navPoint" == child.tagName())
         {
             EpubToc toc;
+            toc.upper = text;
             toc.order = child.attribute("playOrder").toInt();
             QDomElement tmp = child.firstChildElement();
             toc.text = tmp.firstChildElement().firstChild().toText().data();
             toc.src = tmp.nextSiblingElement().attribute("src");
             this->_toc.append(toc);
-            this->readMenu(child); // read submenu
+            this->readMenu(child, toc.text); // read submenu
         }
         child = child.nextSiblingElement();
     }

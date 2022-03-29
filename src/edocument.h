@@ -27,11 +27,13 @@ struct EpubToc
     int order;
     QString text;
     QString src;
+    QString upper;
 
     auto print() -> void
     {
         qDebug() << "order:" << order << '\n'
                  << "text: " << text << '\n'
+                 << "upper: " << upper << '\n'
                  << "src: " << src << '\n';    
     }
 };
@@ -54,7 +56,7 @@ private:
     auto open() -> bool;
     auto getDomElementFromXml(const QByteArray& xml, bool usenamespace = false) -> QDomElement;
     auto metaReader(QByteArray& xml) -> bool;
-    auto readMenu(const QDomElement& element) -> bool;
+    auto readMenu(const QDomElement& element, const QString& text = "") -> bool;
     auto changePath(const QString& name, QByteArray& xml) -> void;
     auto getPageName(const QString fileName, const QString tag = "body") -> QDomNodeList;
     auto saveFile(const QString& name, QByteArray& data) -> void;
