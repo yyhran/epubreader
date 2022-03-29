@@ -40,6 +40,8 @@
 
 #include "edocument.h"
 
+namespace EPUB {
+
 class EpubView : public QWidget 
 {
     Q_OBJECT
@@ -49,6 +51,8 @@ public:
     ~EpubView();
 
     auto loadFile(const QString& path) -> void;
+    auto getToc() -> QList<EpubToc> { return this->_document->getToc(); }
+    auto setF(const QString& fileName) -> void { this->_document->setF(fileName); }
 
     void paintEvent(QPaintEvent* e) override;
     void keyPressEvent(QKeyEvent* e) override;
@@ -59,8 +63,10 @@ private:
     auto scrollPage(int amount) -> void;
 
 private:
-    EPUB::Document* _document;
+    Document* _document;
     int _offset;
 };
+
+}
 
 #endif // __EPUB__VIEW__H

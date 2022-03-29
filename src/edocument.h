@@ -45,13 +45,13 @@ public:
     Document(const QString& fileName, QObject* parent = Q_NULLPTR);
     ~Document();
 
-    auto open() -> bool;
     auto opened() const -> bool { return this->_opened; }
     auto setF(const QString& fileName) -> void;
     auto getToc() -> QList<EpubToc> { return this->_toc; }
     auto getMeta() -> MetaInfo { return this->_metaInfo; }
 
 private:
+    auto open() -> bool;
     auto getDomElementFromXml(const QByteArray& xml, bool usenamespace = false) -> QDomElement;
     auto metaReader(QByteArray& xml) -> bool;
     auto readMenu(const QDomElement& element) -> bool;

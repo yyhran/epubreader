@@ -3,11 +3,11 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , _stackedWidget(new QStackedWidget(this))
-    , _listWidget(new QListWidget(this))
-    , _epubView(new EpubView(this))
+    , _treeWidget(new QTreeWidget(this))
+    , _epubView(new EPUB::EpubView(this))
 {
     this->resize(1000, 800);
-    this->setWindowTitle("Epub Reader");
+    this->setWindowTitle(tr("Epub Reader"));
 
     this->initLayout();
 }
@@ -24,7 +24,7 @@ auto MainWindow::initLayout() -> void
     this->setViewWidget();
 
     this->setCentralWidget(this->_stackedWidget);
-    this->gotoPage(0);
+    this->gotoStackedWidgetPage(0);
 }
 
 auto MainWindow::setMenu() -> void
@@ -40,7 +40,7 @@ auto MainWindow::setMenu() -> void
     auto homeAction = new QAction(this);
     homeAction->setText(tr("Home(&H)"));
     homeAction->setStatusTip(tr("go to home page"));
-    this->connect(homeAction, SIGNAL(triggered()), this, SLOT(gotoPage()));
+    this->connect(homeAction, SIGNAL(triggered()), this, SLOT(gotoStackedWidgetPage()));
     // open file
     auto openAction = new QAction(this);
     openAction->setText(tr("Open(&O)"));
@@ -63,7 +63,7 @@ auto MainWindow::setHomeWidge() -> void
 {
     QWidget* homeWidget = new QWidget(this);
     QLabel* label = new QLabel(homeWidget);
-    label->setText("Hello epub!!!");
+    label->setText(tr("Hello epub!!!"));
     label->setAlignment(Qt::AlignCenter);
 
     QHBoxLayout* mainLayout = new QHBoxLayout(homeWidget);
@@ -75,17 +75,17 @@ auto MainWindow::setHomeWidge() -> void
 auto MainWindow::setViewWidget() -> void
 {
     QMainWindow* viewWidget = new QMainWindow(this);
-    QDockWidget* tocWidget = new QDockWidget("TOC", viewWidget);
+    QDockWidget* tocWidget = new QDockWidget(tr("TOC"), viewWidget);
     tocWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     tocWidget->setFeatures(QDockWidget::DockWidgetMovable);
-    tocWidget->setWidget(this->_listWidget);
+    tocWidget->setWidget(this->_treeWidget);
     viewWidget->setCentralWidget(this->_epubView);
     viewWidget->addDockWidget(Qt::RightDockWidgetArea, tocWidget);
 
     this->_stackedWidget->addWidget(viewWidget);
 }
 
-auto MainWindow::gotoPage(int page) -> void
+auto MainWindow::gotoStackedWidgetPage(int page) -> void
 {
     Q_ASSERT(page >= 0);
     this->_stackedWidget->setCurrentIndex(page);
@@ -94,9 +94,17 @@ auto MainWindow::gotoPage(int page) -> void
 auto MainWindow::openFile() -> void
 {
     QFileDialog fileGet;
-    auto fileName = fileGet.getOpenFileName(this, tr("Open File"), "./", tr("EPUBS(*.epub)"));
+    auto fileName = fileGet.getOpenFileName(this, tr("Open File"), tr("./"), tr("EPUBS(*.epub)"));
     if("" == fileName) return;
 
     this->_epubView->loadFile(fileName);
-    this->gotoPage(1);
+    this->setToc();
+    this->gotoStackedWidgetPage(1);
+}
+
+auto MainWindow::setToc() -> void
+{
+    this->_treeWidget->clear();
+    auto tocData = this->_epubView->getToc();
+
 }

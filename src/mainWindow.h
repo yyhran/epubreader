@@ -2,7 +2,7 @@
 #define __MAIN_WINDOW__H
 
 #include <QMainWindow>
-#include <QListWidget>
+#include <QTreeWidget>
 #include <QStackedWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -20,22 +20,23 @@ public:
     MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
+    void keyPressEvent(QKeyEvent* e) override { this->_epubView->keyPressEvent(e); } // just forward
+
 private slots:
     void openFile();
-    void gotoPage(int page = 0);
-
-    void keyPressEvent(QKeyEvent* e) override { this->_epubView->keyPressEvent(e); }
+    void gotoStackedWidgetPage(int page = 0);
 
 private:
     auto initLayout() -> void;
     auto setMenu() -> void;
     auto setHomeWidge() -> void;
     auto setViewWidget() -> void;
+    auto setToc() -> void;
 
 private:
     QStackedWidget* _stackedWidget;
-    QListWidget* _listWidget;
-    EpubView* _epubView;
+    QTreeWidget* _treeWidget;
+    EPUB::EpubView* _epubView;
 };
 
 #endif // __MAIN_WINDOW__H

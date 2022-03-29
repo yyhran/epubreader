@@ -1,5 +1,7 @@
 #include "epubView.h"
 
+namespace EPUB {
+
 EpubView::EpubView(QWidget* parent)
     : QWidget(parent)
     , _document(Q_NULLPTR)
@@ -15,8 +17,7 @@ EpubView::~EpubView()
 auto EpubView::loadFile(const QString& path) -> void
 {
     delete this->_document;
-    this->_document = new EPUB::Document(path, this);
-    this->_document->open();
+    this->_document = new Document(path, this);
 
     // test begin
     this->_document->setF("chapter004");
@@ -112,4 +113,6 @@ void EpubView::resizeEvent(QResizeEvent*)
 {
     this->_document->setPageSize(this->size());
     this->update();
+}
+
 }

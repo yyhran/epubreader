@@ -17,6 +17,7 @@ Document::Document(const QString& fileName, QObject* parent)
         QDir dir(this->_bookPath);
         if(not dir.exists()) dir.mkpath(this->_bookPath);
     }
+    this->open();
 }
 
 Document::~Document() { }
@@ -219,7 +220,7 @@ auto Document::readMenu(const QDomElement& element) -> bool
             toc.text = tmp.firstChildElement().firstChild().toText().data();
             toc.src = tmp.nextSiblingElement().attribute("src");
             this->_toc.append(toc);
-            this->readMenu(child);
+            this->readMenu(child); // read submenu
         }
         child = child.nextSiblingElement();
     }
