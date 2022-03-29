@@ -5,6 +5,7 @@ namespace EPUB {
 Document::Document(const QString& fileName, QObject* parent)
     : QTextDocument(parent)
     , _fileName(fileName)
+    , _openedFile("")
     , _runOnRam(false)
     , _opened(false)
 {
@@ -52,10 +53,6 @@ auto Document::open() -> bool
                 QFileInfo fileInfo(name);
                 if(QLatin1String("image/jpeg") == mimeType)
                 {
-                    if("cover.jpeg" == name)
-                    {
-                        this->_coverPager = data;
-                    }
                     if(name.contains("/")) this->_imgPath = this->_bookPath + name.left(name.lastIndexOf("/")) + "/";
                     if(this->_runOnRam)
                     {
@@ -98,8 +95,21 @@ auto Document::open() -> bool
     return false;
 }
 
-auto Document::setF(const QString& fileName) -> void
+auto Document::setF(const QString& file) -> void
 {
+    QString fileName = file.left(file.lastIndexOf("#"));
+    // new file
+    if("" == this->_openedFile or fileName != this->_openedFile)
+    {
+        this->setFile(fileName);
+    }
+    //TODO: set pos
+
+}
+
+auto Document::setFile(const QString& fileName) -> void
+{
+    this->_openedFile = fileName;
     if(this->_runOnRam)
     {
         for(auto it = this->_textData.begin(); it != this->_textData.end(); ++it)
@@ -203,12 +213,6 @@ auto Document::metaReader(QByteArray& xml) -> bool
         ret = this->readMenu(elem);
     }
     this->_metaData.remove(tocFile);
-
-    if(this->_coverPager.isEmpty())
-    {
-        EPUBWARNING() << "Coverpage or StartPage variable is not full!";
-    }
-    else ret = true;
 
     return ret;
 }

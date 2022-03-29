@@ -95,7 +95,6 @@ auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
 {
     auto title = item->text(index);
     QString file = this->_tocMap[title].src;
-    file = file.left(file.lastIndexOf("#"));
     this->_epubView->setF(file);
 }
 

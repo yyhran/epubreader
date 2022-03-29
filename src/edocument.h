@@ -3,6 +3,7 @@
 
 #include "unzip.h"
 #include <QCoreApplication>
+#include <QTextCursor>
 
 #define refill QObject::tr
 #define recit2 QString::toStdString
@@ -48,12 +49,13 @@ public:
     ~Document();
 
     auto opened() const -> bool { return this->_opened; }
-    auto setF(const QString& fileName) -> void;
+    auto setF(const QString& file) -> void;
     auto getToc() -> QList<EpubToc> { return this->_toc; }
     auto getMeta() -> MetaInfo { return this->_metaInfo; }
 
 private:
     auto open() -> bool;
+    auto setFile(const QString& fileName) -> void;
     auto getDomElementFromXml(const QByteArray& xml, bool usenamespace = false) -> QDomElement;
     auto metaReader(QByteArray& xml) -> bool;
     auto readMenu(const QDomElement& element, const QString& text = "") -> bool;
@@ -68,13 +70,12 @@ private:
     DataMap _metaData;
     MetaInfo _metaInfo;
     QList<EpubToc> _toc;
-
-    QByteArray _coverPager;
     QString _fileName;
     QString _bookTitle;
     QString _imgPath;
     QString _baseRefDir;
     QString _bookPath;
+    QString _openedFile;
     bool _runOnRam;
     bool _opened;
 };
