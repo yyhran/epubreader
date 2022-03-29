@@ -69,9 +69,9 @@ private:
     MetaInfo _metaInfo;
     QList<EpubToc> _toc;
 
+    QByteArray _coverPager;
     QString _fileName;
     QString _bookTitle;
-    QString _coverPager;
     QString _imgPath;
     QString _baseRefDir;
     QString _bookPath;

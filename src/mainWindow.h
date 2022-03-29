@@ -29,6 +29,7 @@ public:
 private slots:
     void openFile();
     void gotoStackedWidgetPage(int page = 0);
+    void gotoFile(QTreeWidgetItem* item, int index);
 
 private:
     auto initLayout() -> void;

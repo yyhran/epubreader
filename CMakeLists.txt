@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 project(Reader LANGUAGES C CXX
-        VERSION 0.1.1
+        VERSION 0.1.2
         DESCRIPTION "a simple epub-file reader"
         HOMEPAGE_URL "https://github.com/ang-ao/epubreader"
 )
@@ -20,7 +20,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 COMPONENTS Widgets Core Gui Xml XmlPatterns REQUIRED)
+find_package(Qt5 COMPONENTS Widgets Core Gui Xml REQUIRED)
 if(Qt5_FOUND)
     message("Qt5_FOUND")
 endif()
@@ -43,4 +43,4 @@ file(GLOB sources CONFIGURE_DEPENDS res/res.qrc src/*.cpp src/*.h)
 
 target_sources(${PROJECT_NAME} PUBLIC ${sources})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Xml Qt5::XmlPatterns z)
+target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Xml z)

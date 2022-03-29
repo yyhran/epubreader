@@ -5,7 +5,6 @@ namespace EPUB {
 Document::Document(const QString& fileName, QObject* parent)
     : QTextDocument(parent)
     , _fileName(fileName)
-    , _coverPager("")
     , _runOnRam(false)
     , _opened(false)
 {
@@ -17,7 +16,11 @@ Document::Document(const QString& fileName, QObject* parent)
         QDir dir(this->_bookPath);
         if(not dir.exists()) dir.mkpath(this->_bookPath);
     }
-    this->open();
+    if(this->open())
+    {
+        this->setF("titlepage.xhtml");
+    }
+    
 }
 
 Document::~Document() { }
@@ -49,6 +52,10 @@ auto Document::open() -> bool
                 QFileInfo fileInfo(name);
                 if(QLatin1String("image/jpeg") == mimeType)
                 {
+                    if("cover.jpeg" == name)
+                    {
+                        this->_coverPager = data;
+                    }
                     if(name.contains("/")) this->_imgPath = this->_bookPath + name.left(name.lastIndexOf("/")) + "/";
                     if(this->_runOnRam)
                     {
@@ -105,7 +112,7 @@ auto Document::setF(const QString& fileName) -> void
     }
     else
     {
-        QFile f("D:/GitHub/epubreader/build/books/Mastering/index_split_002.html");
+        QFile f(this->_bookPath + fileName);
         if(f.exists())
         {
             if(f.open(QIODevice::ReadWrite))
@@ -173,8 +180,8 @@ auto Document::metaReader(QByteArray& xml) -> bool
             this->_metaInfo[tmp.localName()] << tmp.firstChild().toText().data();
         }
     }
-    QDomNodeList guideList = this->getPageName(contentFile, QString("guide"));
-    this->_coverPager = guideList.at(0).toElement().firstChildElement().attribute("htef");
+    // QDomNodeList guideList = this->getPageName(contentFile, QString("guide"));
+    // this->_coverPager = guideList.at(0).toElement().firstChildElement().attribute("htef");
 
     QString tocFile{""};
     QDomNodeList itemlist = this->getPageName(contentFile, QString("item"));
@@ -257,6 +264,21 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
         oldNode.setAttribute("src", path);
         QDomElement newNode = imgList.at(i).toElement();
         imgList.at(i).replaceChild(newNode, oldNode); 
+    }
+    // change <svg> to <img>
+    QDomNodeList svgList = root.elementsByTagName("svg");
+    for(int i{0}; i < svgList.size(); ++i)
+    {
+        QDomElement svgNode = svgList.at(i).toElement();
+        QDomDocument tmpDom;
+        tmpDom.appendChild(tmpDom.importNode(svgNode, true));
+
+        QFileInfo fileInfo(svgNode.elementsByTagName("image").at(0).toElement().attribute("xlink:href"));
+        QString path = (this->_runOnRam ? "myData:/" : this->_bookPath) + fileInfo.fileName();
+        QDomElement imagElement = document.createElement("img");
+        imagElement.setAttribute("src", path);
+        QDomNode parent = svgList.at(i).parentNode();
+        parent.replaceChild(imagElement, svgNode);
     }
 
     if(this->_runOnRam)

@@ -15,7 +15,6 @@
 #include <QXmlSimpleReader>
 #include <QMimeDatabase>
 #include <QSet>
-#include <Qdatetime>
 #include <qendian.h>
 #include <QDir>
 #include <QFileInfo>

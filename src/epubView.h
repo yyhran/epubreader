@@ -53,7 +53,7 @@ public:
     auto loadFile(const QString& path) -> void;
     auto getToc() -> QList<EpubToc> { return this->_document->getToc(); }
     auto getMetaInfo() -> Document::MetaInfo { return this->_document->getMeta(); }
-    auto setF(const QString& fileName) -> void { this->_document->setF(fileName); }
+    auto setF(const QString& fileName) -> void { this->_document->setF(fileName); this->update(); }
 
     void paintEvent(QPaintEvent* e) override;
     void keyPressEvent(QKeyEvent* e) override;

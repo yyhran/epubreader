@@ -18,8 +18,6 @@ auto EpubView::loadFile(const QString& path) -> void
 {
     delete this->_document;
     this->_document = new Document(path, this);
-
-    this->_document->setF("chapter004");
 }
 
 auto EpubView::scroll(int amount) -> void

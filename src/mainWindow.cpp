@@ -91,6 +91,14 @@ auto MainWindow::gotoStackedWidgetPage(int page) -> void
     this->_stackedWidget->setCurrentIndex(page);
 }
 
+auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
+{
+    auto title = item->text(index);
+    QString file = this->_tocMap[title].src;
+    file = file.left(file.lastIndexOf("#"));
+    this->_epubView->setF(file);
+}
+
 auto MainWindow::openFile() -> void
 {
     QFileDialog fileGet;
@@ -104,6 +112,7 @@ auto MainWindow::openFile() -> void
 
 auto MainWindow::setToc() -> void
 {
+    // clear
     this->_treeWidget->clear();
     this->_metaInfo.clear();
     this->_tocMap.clear();
@@ -129,5 +138,6 @@ auto MainWindow::setToc() -> void
         }
         tocMap.insert(text, item);
     }
-    tocMap.clear();
+    this->connect(this->_treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+                  this, SLOT(gotoFile(QTreeWidgetItem*, int)));
 }
