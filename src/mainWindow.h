@@ -24,8 +24,6 @@ public:
     MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
-    void keyPressEvent(QKeyEvent* e) override { this->_epubView->keyPressEvent(e); } // just forward
-
 private slots:
     void openFile();
     void gotoStackedWidgetPage(int page = 0);
@@ -36,6 +34,7 @@ private:
     auto setMenu() -> void;
     auto setHomeWidge() -> void;
     auto setViewWidget() -> void;
+
     auto setToc() -> void;
 
 private:
