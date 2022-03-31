@@ -80,8 +80,8 @@ private slots:
 
    void onValueChanged(int value)
    {
-       this->_label->setText(tr(QString("%1%").arg(this->_slider->value()).toStdString().c_str()));
-       emit this->valueChanged(this->_slider->value());
+       this->_label->setText(tr(QString("%1%").arg(value).toStdString().c_str()));
+       emit this->valueChanged(value);
    }
 
 private:
