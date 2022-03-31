@@ -82,7 +82,22 @@ auto MainWindow::setViewWidget() -> void
     viewWidget->setCentralWidget(this->_epubView);
     viewWidget->addDockWidget(Qt::RightDockWidgetArea, tocWidget);
 
+    this->setBottomWidget(viewWidget);
     this->_stackedWidget->addWidget(viewWidget);
+}
+
+auto MainWindow::setBottomWidget(QMainWindow* viewWidget) -> void
+{
+    auto statusBar = new QStatusBar(this);
+    auto slider = new FontSlider(10, 300, this);
+    this->connect(slider, &FontSlider::valueChanged, this, [&](int value)
+    {
+        int size = this->_font.pixelSize() * value / 100;
+        this->_epubView->setDocFont(QFont(this->_font.family(), size));
+    });
+
+    statusBar->addPermanentWidget(slider);
+    viewWidget->setStatusBar(statusBar);
 }
 
 auto MainWindow::gotoStackedWidgetPage(int page) -> void
@@ -123,7 +138,9 @@ auto MainWindow::setToc() -> void
     this->_treeWidget->clear();
     this->_metaInfo.clear();
     this->_tocMap.clear();
+    this->_font.cleanup();
 
+    this->_font = this->_epubView->getDocFont();
     this->_metaInfo = this->_epubView->getMetaInfo();
     this->_treeWidget->headerItem()->setText(0, this->_metaInfo["title"].toStdList().front());
 

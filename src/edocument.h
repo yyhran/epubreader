@@ -51,8 +51,9 @@ public:
     auto opened() const -> bool { return this->_opened; }
     auto openedFile() const -> QString { return this->_openedFile; }
     auto setFile(const QString& file) -> void;
-    auto getToc() -> QList<EpubToc> { return this->_toc; }
-    auto getMeta() -> MetaInfo { return this->_metaInfo; }
+    auto getToc() const -> QList<EpubToc> { return this->_toc; }
+    auto getMeta() const -> MetaInfo { return this->_metaInfo; }
+    auto getFont() const -> QFont { return this->defaultFont(); }
 
 private:
     auto open() -> bool;

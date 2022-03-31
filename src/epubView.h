@@ -19,10 +19,12 @@ public:
 
     auto loadFile(const QString& path) -> void;
     auto setPos(const QUrl& url) -> void;
-    auto getToc() -> QList<EpubToc> { return this->_document->getToc(); }
-    auto getMetaInfo() -> Document::MetaInfo { return this->_document->getMeta(); }
+    auto getToc() const -> QList<EpubToc> { return this->_document->getToc(); }
+    auto getMetaInfo() const -> Document::MetaInfo { return this->_document->getMeta(); }
     auto setFile(const QString& fileName) -> void { this->_document->setFile(fileName); this->update(); }
-    auto getFile() -> QString { return this->_document->openedFile(); }
+    auto getFile() const -> QString { return this->_document->openedFile(); }
+    auto setDocFont(const QFont& font) -> void { this->_document->setDefaultFont(font); }
+    auto getDocFont() const -> QFont { return this->_document->getFont(); }
 
 private slots:
     void gotoToc(const QUrl& url);
