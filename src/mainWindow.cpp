@@ -119,9 +119,6 @@ auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
         this->_epubView->setFile(fileName);
     }
     this->_epubView->setPos(filePos);
-
-    this->_font.cleanup();
-    this->_font = this->_epubView->getDocFont();
 }
 
 auto MainWindow::openFile() -> void
@@ -141,7 +138,9 @@ auto MainWindow::setToc() -> void
     this->_treeWidget->clear();
     this->_metaInfo.clear();
     this->_tocMap.clear();
+    this->_font.cleanup();
 
+    this->_font = this->_epubView->getDocFont();
     this->_metaInfo = this->_epubView->getMetaInfo();
     this->_treeWidget->headerItem()->setText(0, this->_metaInfo["title"].toStdList().front());
 

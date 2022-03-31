@@ -59,6 +59,7 @@ public:
     ~FontSlider() {}
 
     auto getValue() const noexcept -> int { return this->_slider->value(); }
+    auto resizeValue() const noexcept -> void { this->_slider->setValue(100); }
 
 signals:
     void valueChanged(int);    
