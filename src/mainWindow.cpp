@@ -89,10 +89,10 @@ auto MainWindow::setViewWidget() -> void
 auto MainWindow::setBottomWidget(QMainWindow* viewWidget) -> void
 {
     auto statusBar = new QStatusBar(this);
-    auto slider = new FontSlider(10, 300, this);
+    auto slider = new FontSlider(20, 300, this);
     this->connect(slider, &FontSlider::valueChanged, this, [&](int value)
     {
-        int size = this->_font.pixelSize() * value / 100;
+        int size = this->_font.pointSize() * value / 100;
         this->_epubView->setDocFont(QFont(this->_font.family(), size));
     });
 
@@ -119,6 +119,9 @@ auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
         this->_epubView->setFile(fileName);
     }
     this->_epubView->setPos(filePos);
+
+    this->_font.cleanup();
+    this->_font = this->_epubView->getDocFont();
 }
 
 auto MainWindow::openFile() -> void
@@ -138,9 +141,7 @@ auto MainWindow::setToc() -> void
     this->_treeWidget->clear();
     this->_metaInfo.clear();
     this->_tocMap.clear();
-    this->_font.cleanup();
 
-    this->_font = this->_epubView->getDocFont();
     this->_metaInfo = this->_epubView->getMetaInfo();
     this->_treeWidget->headerItem()->setText(0, this->_metaInfo["title"].toStdList().front());
 
