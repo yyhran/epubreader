@@ -18,9 +18,14 @@ public:
     ~EpubView();
 
     auto loadFile(const QString& path) -> void;
+    auto setPos(const QUrl& url) -> void;
     auto getToc() -> QList<EpubToc> { return this->_document->getToc(); }
     auto getMetaInfo() -> Document::MetaInfo { return this->_document->getMeta(); }
-    auto setF(const QString& fileName) -> void { this->_document->setF(fileName); this->update(); }
+    auto setFile(const QString& fileName) -> void { this->_document->setFile(fileName); this->update(); }
+    auto getFile() -> QString { return this->_document->openedFile(); }
+
+private slots:
+    void gotoToc(const QUrl& url);
 
 private:
     Document* _document;

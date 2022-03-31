@@ -95,7 +95,15 @@ auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
 {
     auto title = item->text(index);
     QString file = this->_tocMap[title].src;
-    this->_epubView->setF(file);
+
+    int pos = file.indexOf("#");
+    QString fileName = file.left(pos);
+    QString filePos = pos == -1 ? "#" : file.mid(pos);
+    if(fileName != this->_epubView->getFile())
+    {
+        this->_epubView->setFile(fileName);
+    }
+    this->_epubView->setPos(filePos);
 }
 
 auto MainWindow::openFile() -> void

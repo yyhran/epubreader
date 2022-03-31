@@ -19,7 +19,7 @@ Document::Document(const QString& fileName, QObject* parent)
     }
     if(this->open())
     {
-        this->setF("titlepage.xhtml");
+        this->setFile("titlepage.xhtml");
     }
     
 }
@@ -95,26 +95,14 @@ auto Document::open() -> bool
     return false;
 }
 
-auto Document::setF(const QString& file) -> void
+auto Document::setFile(const QString& file) -> void
 {
-    QString fileName = file.left(file.lastIndexOf("#"));
-    // new file
-    if("" == this->_openedFile or fileName != this->_openedFile)
-    {
-        this->setFile(fileName);
-    }
-    //TODO: set pos
-
-}
-
-auto Document::setFile(const QString& fileName) -> void
-{
-    this->_openedFile = fileName;
+    this->_openedFile = file;
     if(this->_runOnRam)
     {
         for(auto it = this->_textData.begin(); it != this->_textData.end(); ++it)
         {
-            if(it.key().contains(fileName))
+            if(it.key().contains(file))
             {
                 this->setHtml(it.value());
             }
@@ -122,7 +110,7 @@ auto Document::setFile(const QString& fileName) -> void
     }
     else
     {
-        QFile f(this->_bookPath + fileName);
+        QFile f(this->_bookPath + file);
         if(f.exists())
         {
             if(f.open(QIODevice::ReadWrite))

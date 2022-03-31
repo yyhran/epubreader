@@ -49,13 +49,13 @@ public:
     ~Document();
 
     auto opened() const -> bool { return this->_opened; }
-    auto setF(const QString& file) -> void;
+    auto openedFile() const -> QString { return this->_openedFile; }
+    auto setFile(const QString& file) -> void;
     auto getToc() -> QList<EpubToc> { return this->_toc; }
     auto getMeta() -> MetaInfo { return this->_metaInfo; }
 
 private:
     auto open() -> bool;
-    auto setFile(const QString& fileName) -> void;
     auto getDomElementFromXml(const QByteArray& xml, bool usenamespace = false) -> QDomElement;
     auto metaReader(QByteArray& xml) -> bool;
     auto readMenu(const QDomElement& element, const QString& text = "") -> bool;
