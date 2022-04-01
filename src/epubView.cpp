@@ -12,7 +12,7 @@ EpubView::EpubView(QWidget* parent)
 
 EpubView::~EpubView()
 {
-
+    delete this->_document;
 }
 
 auto EpubView::loadFile(const QString& path) -> void

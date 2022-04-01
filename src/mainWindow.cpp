@@ -4,7 +4,7 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , _stackedWidget(new QStackedWidget(this))
     , _treeWidget(new QTreeWidget(this))
-    , _fontSlider(new FontSlider(20, 300, this))
+    , _fontSlider(new FontSlider(20, 500, this))
     , _epubView(new EPUB::EpubView(this))
 {
     this->resize(1000, 800);
@@ -112,7 +112,6 @@ auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
 {
     auto title = item->text(index);
     QString file = this->_tocMap[title].src;
-
     int pos = file.indexOf("#");
     QString fileName = file.left(pos);
     QString filePos = pos == -1 ? "#" : file.mid(pos);
@@ -151,7 +150,7 @@ auto MainWindow::setToc() -> void
     QMap<QString, QTreeWidgetItem*> tocMap;
     for(auto&& data : tocData)
     {
-        this->_tocMap.insert(data.text, data);
+        this->_tocMap.insert(data.text, data); // bug: do not wang to fix it now.
         auto text = data.text;
         auto upper = data.upper;
         QTreeWidgetItem* item = Q_NULLPTR;

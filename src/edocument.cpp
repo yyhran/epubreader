@@ -24,7 +24,18 @@ Document::Document(const QString& fileName, QObject* parent)
     
 }
 
-Document::~Document() { }
+Document::~Document()
+{ 
+    if(not this->_runOnRam)
+    {
+        Q_ASSERT("" != this->_bookPath);
+        QDir dir(this->_bookPath);
+        if(dir.exists())
+        {
+            dir.removeRecursively();
+        }
+    }
+}
 
 auto Document::open() -> bool
 {
