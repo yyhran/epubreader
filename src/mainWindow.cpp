@@ -4,12 +4,15 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , _stackedWidget(new QStackedWidget(this))
     , _treeWidget(new QTreeWidget(this))
+    , _fontSlider(new FontSlider(20, 300, this))
     , _epubView(new EPUB::EpubView(this))
 {
     this->resize(1000, 800);
     this->setWindowTitle(tr("Epub Reader"));
 
     this->initLayout();
+    this->connect(this->_treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+                  this, SLOT(gotoFile(QTreeWidgetItem*, int)));
 }
 
 MainWindow::~MainWindow()
@@ -89,14 +92,13 @@ auto MainWindow::setViewWidget() -> void
 auto MainWindow::setBottomWidget(QMainWindow* viewWidget) -> void
 {
     auto statusBar = new QStatusBar(this);
-    auto slider = new FontSlider(20, 300, this);
-    this->connect(slider, &FontSlider::valueChanged, this, [&](int value)
+    this->connect(this->_fontSlider, &FontSlider::valueChanged, this, [&](int value)
     {
         int size = this->_font.pointSize() * value / 100;
         this->_epubView->setDocFont(QFont(this->_font.family(), size));
     });
 
-    statusBar->addPermanentWidget(slider);
+    statusBar->addPermanentWidget(this->_fontSlider);
     viewWidget->setStatusBar(statusBar);
 }
 
@@ -127,9 +129,10 @@ auto MainWindow::openFile() -> void
     auto fileName = fileGet.getOpenFileName(this, tr("Open File"), tr("./"), tr("EPUBS(*.epub)"));
     if("" == fileName) return;
 
+    this->_fontSlider->resizeValue();
+    this->gotoStackedWidgetPage(1);
     this->_epubView->loadFile(fileName);
     this->setToc();
-    this->gotoStackedWidgetPage(1);
 }
 
 auto MainWindow::setToc() -> void
@@ -162,6 +165,4 @@ auto MainWindow::setToc() -> void
         }
         tocMap.insert(text, item);
     }
-    this->connect(this->_treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
-                  this, SLOT(gotoFile(QTreeWidgetItem*, int)));
 }

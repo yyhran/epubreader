@@ -17,9 +17,10 @@ EpubView::~EpubView()
 
 auto EpubView::loadFile(const QString& path) -> void
 {
+    Document* document = new Document(path, this);
+    this->setDocument(document);
     delete this->_document;
-    this->_document = new Document(path, this);
-    this->setDocument(this->_document);
+    this->_document = document;
 }
 
 auto EpubView::setPos(const QUrl& url) -> void

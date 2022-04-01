@@ -119,6 +119,7 @@ private:
 private:
     QStackedWidget* _stackedWidget;
     QTreeWidget* _treeWidget;
+    FontSlider* _fontSlider;
     EPUB::EpubView* _epubView;
     MetaInfo _metaInfo;
     TocMap _tocMap;
