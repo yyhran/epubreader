@@ -110,8 +110,7 @@ auto MainWindow::gotoStackedWidgetPage(int page) -> void
 
 auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
 {
-    auto title = item->text(index);
-    QString file = this->_tocMap[title].src;
+    QString file = this->_tocMap[item].src;
     int pos = file.indexOf("#");
     QString fileName = file.left(pos);
     QString filePos = pos == -1 ? "#" : file.mid(pos);
@@ -150,7 +149,6 @@ auto MainWindow::setToc() -> void
     QMap<QString, QTreeWidgetItem*> tocMap;
     for(auto&& data : tocData)
     {
-        this->_tocMap.insert(data.text, data); // bug: do not wang to fix it now.
         auto text = data.text;
         auto upper = data.upper;
         QTreeWidgetItem* item = Q_NULLPTR;
@@ -162,6 +160,7 @@ auto MainWindow::setToc() -> void
         {
             item = new QTreeWidgetItem(tocMap[upper], QStringList(text));
         }
+        this->_tocMap.insert(item, data);
         tocMap.insert(text, item);
     }
 }

@@ -96,7 +96,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    using TocMap = QMap<QString, EPUB::EpubToc>;
+    using TocMap = QMap<QTreeWidgetItem*, EPUB::EpubToc>;
     using MetaInfo = EPUB::Document::MetaInfo;
 
     MainWindow(QWidget* parent = 0);
