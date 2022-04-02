@@ -5,6 +5,7 @@ namespace EPUB {
 Document::Document(const QString& fileName, QObject* parent)
     : QTextDocument(parent)
     , _fileName(fileName)
+    , _baseRefDir("")
     , _openedFile("")
     , _runOnRam(false)
     , _opened(false)
@@ -141,7 +142,7 @@ auto Document::getDomElementFromXml(const QByteArray& xml, bool usenamespace) ->
     if(document.setContent(xml, usenamespace))
     {
         QDomElement node = document.documentElement();
-        EPUBDEBUG() << "sucess getDomElementFromXml first tagName: " << node.tagName();
+        EPUBDEBUG() << "sucess getDomElementFromXml first tagName: " << node.tagName() << __LINE__;
         return node;
     }
 
@@ -156,7 +157,7 @@ auto Document::metaReader(QByteArray& xml) -> bool
     QDomNodeList der = root.elementsByTagName("rootfile");
     if(0 == der.count())
     {
-        EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
+        EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml" << __LINE__;
         return ret;
     }
     this->_metaData.remove(containerFile);
@@ -166,14 +167,14 @@ auto Document::metaReader(QByteArray& xml) -> bool
     {
         QDomElement node = der.at(i).toElement();
         contentFile = node.attribute("full-path"); // content.opf
+        if(0 == contentFile.size())
+        {
+            EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml" << __LINE__;
+            return false;
+        }
         EPUBDEBUG() << "Start on file:" << contentFile << __LINE__;
     }
 
-    if(0 == contentFile.size())
-    {
-        EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml";
-        return false;
-    }
     if(contentFile.contains("/"))
     {
         this->_baseRefDir = contentFile.left(contentFile.lastIndexOf("/")) + "/";
@@ -202,6 +203,16 @@ auto Document::metaReader(QByteArray& xml) -> bool
             tocFile = nodepager.attribute("href");
         }
     }
+    if(0 == tocFile.size())
+    {
+        EPUBDEBUG() << "unable to get place from file toc.ncx, inside content.opf" << __LINE__;
+        return false;
+    }
+    else
+    {
+        tocFile = this->_baseRefDir + tocFile;
+    }
+
     EPUBDEBUG() << "get toc from  " << tocFile << __LINE__;
 
     QDomNodeList navitom = this->getPageName(tocFile, "navMap");
@@ -228,7 +239,7 @@ auto Document::readMenu(const QDomElement& element, const QString& text) -> bool
             toc.order = child.attribute("playOrder").toInt();
             QDomElement tmp = child.firstChildElement();
             toc.text = tmp.firstChildElement().firstChild().toText().data();
-            toc.src = tmp.nextSiblingElement().attribute("src");
+            toc.src = this->_baseRefDir + tmp.nextSiblingElement().attribute("src");
             this->_toc.append(toc);
             this->readMenu(child, toc.text); // read submenu
         }
@@ -308,7 +319,9 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
 
 auto Document::getPageName(const QString fileName, const QString tag) -> QDomNodeList
 {
-    EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName << " : " << tag << " current actioncycle.";
+    EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName
+                << " : " << tag
+                << " current actioncycle." << __LINE__;
 
     QDomNodeList defineterror;
 
@@ -322,7 +335,9 @@ auto Document::getPageName(const QString fileName, const QString tag) -> QDomNod
     if(der.count() > 0) return der;
     else if(dera.count() > 0) return dera;
 
-    EPUBDEBUG() << "Request Error: " << fileName << ":" << tag << " export FAIL!....";
+    EPUBDEBUG() << "Request Error: " << fileName
+                << ":" << tag
+                << " export FAIL!...." << __LINE__;
     return defineterror;
 }
 

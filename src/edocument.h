@@ -5,9 +5,6 @@
 #include <QCoreApplication>
 #include <QTextCursor>
 
-#define refill QObject::tr
-#define recit2 QString::toStdString
-
 #if 0
 #define EPUBDEBUG qDebug
 #define EPUBWARNING qWarning
@@ -19,7 +16,6 @@
 #endif
 
 #define METAINFOCONTAINERFILE QLatin1String("META-INF/container.xml")
-#define CONTENENTOPFFILE QLatin1String("content.opf")
 
 namespace EPUB {
 
