@@ -67,6 +67,7 @@ private:
     DataMap _metaData;
     MetaInfo _metaInfo;
     QList<EpubToc> _toc;
+    QString _coverImage;
     QString _fileName;
     QString _bookTitle;
     QString _imgPath;

@@ -20,7 +20,11 @@ Document::Document(const QString& fileName, QObject* parent)
     }
     if(this->open())
     {
-        this->setFile("titlepage.xhtml");
+        if("" != this->_coverImage)
+        {
+            this->setHtml(this->_coverImage);
+        }
+        else this->setFile("titlepage.xhtml");
     }
     
 }
@@ -198,9 +202,31 @@ auto Document::metaReader(QByteArray& xml) -> bool
     for(int i{0}; i < itemlist.count(); ++i) 
     {
         QDomElement nodepager = itemlist.at(i).toElement();
-        if("ncx" == nodepager.attribute("id"))
+        QString attrId = nodepager.attribute("id");
+        if("ncx" == attrId)
         {
             tocFile = nodepager.attribute("href");
+        }
+        if(attrId.contains("cover"))
+        {
+            if(not this->_runOnRam)
+            {
+                if("image/jpeg" == nodepager.attribute("media-type"))
+                {
+                    this->_coverImage = "<img src=\"" + this->_bookPath + this->_baseRefDir + nodepager.attribute("href") +"\"/>";
+                }
+                else if("application/xhtml+xml" == nodepager.attribute("media-type"))
+                {
+                    QFile f(this->_bookPath + this->_baseRefDir + nodepager.attribute("href"));
+                    if(f.exists())
+                    {
+                        if(f.open(QIODevice::ReadOnly))
+                        {
+                            this->_coverImage = f.readAll().toStdString().c_str();
+                        }
+                    }
+                }
+            }
         }
     }
     if(0 == tocFile.size())
