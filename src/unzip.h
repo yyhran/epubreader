@@ -24,8 +24,6 @@
 #include <QColor>
 #include <QCryptographicHash>
 
-#define UNZIP_READ_BUFFER (256 * 1024)
-
 #if 0
 #define UNZIPDEBUG qDebug
 #define UNZIPWARNING qWarning
@@ -33,6 +31,8 @@
 #define UNZIPDEBUG if(0) qDebug
 #define UNZIPWARNING if(0) qWarning
 #endif
+
+constexpr uint UNZIP_READ_BUFFER = 256 * 1024;
 
 static inline QString MimeinFile(const QString file)
 {

@@ -15,8 +15,6 @@
 #define STAGE 0
 #endif
 
-#define METAINFOCONTAINERFILE QLatin1String("META-INF/container.xml")
-
 namespace EPUB {
 
 struct EpubToc

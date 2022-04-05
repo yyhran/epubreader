@@ -97,7 +97,7 @@ auto Document::open() -> bool
 
     for(auto it = this->_metaData.begin(); it != this->_metaData.end(); ++it)
     {
-        if(METAINFOCONTAINERFILE == it.key())
+        if("META-INF/container.xml" == it.key())
         {
             if(it.value().size() < 4) return false;
             if(this->metaReader(it.value()))
