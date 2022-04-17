@@ -1,56 +1,56 @@
 #include "unzip.h"
 
 // local header size
-constexpr uint UNZIP_LOCAL_HEADER_SIZE = 26;
+static constexpr uint UNZIP_LOCAL_HEADER_SIZE = 26;
 // central directory file entry size
-constexpr uint UNZIP_CD_ENTRY_SIZE_NS = 42;
+static constexpr uint UNZIP_CD_ENTRY_SIZE_NS = 42;
 // data descriptor size
-constexpr uint UNZIP_DD_SIZE = 12;
+static constexpr uint UNZIP_DD_SIZE = 12;
 // end of central directory size
-constexpr uint UNZIP_EOCD_SIZE = 22;
+static constexpr uint UNZIP_EOCD_SIZE = 22;
 // local header entry encryption header size
-constexpr uint UNZIP_LOCAL_ENC_HEADER_SIZE = 12;
+static constexpr uint UNZIP_LOCAL_ENC_HEADER_SIZE = 12;
 
 // some offsets inside a CD record
-constexpr uint UNZIP_CD_OFF_VERSION_MADE = 0;
-constexpr uint UNZIP_CD_OFF_VERSION = 2;
-constexpr uint UNZIP_CD_OFF_GPFLAG = 4;
-constexpr uint UNZIP_CD_OFF_CMETHOD = 6;
-constexpr uint UNZIP_CD_OFF_MODT = 8;
-constexpr uint UNZIP_CD_OFF_MODD = 10;
-constexpr uint UNZIP_CD_OFF_CRC32 = 12;
-constexpr uint UNZIP_CD_OFF_CSIZE = 16;
-constexpr uint UNZIP_CD_OFF_USIZE = 20;
-constexpr uint UNZIP_CD_OFF_NAMELEN = 24;
-constexpr uint UNZIP_CD_OFF_XLEN = 26;
-constexpr uint UNZIP_CD_OFF_COMMLEN = 28;
-constexpr uint UNZIP_CD_OFF_LHOFFSET = 38;
+static constexpr uint UNZIP_CD_OFF_VERSION_MADE = 0;
+static constexpr uint UNZIP_CD_OFF_VERSION = 2;
+static constexpr uint UNZIP_CD_OFF_GPFLAG = 4;
+static constexpr uint UNZIP_CD_OFF_CMETHOD = 6;
+static constexpr uint UNZIP_CD_OFF_MODT = 8;
+static constexpr uint UNZIP_CD_OFF_MODD = 10;
+static constexpr uint UNZIP_CD_OFF_CRC32 = 12;
+static constexpr uint UNZIP_CD_OFF_CSIZE = 16;
+static constexpr uint UNZIP_CD_OFF_USIZE = 20;
+static constexpr uint UNZIP_CD_OFF_NAMELEN = 24;
+static constexpr uint UNZIP_CD_OFF_XLEN = 26;
+static constexpr uint UNZIP_CD_OFF_COMMLEN = 28;
+static constexpr uint UNZIP_CD_OFF_LHOFFSET = 38;
 
 // some offsets inside a local header record
-constexpr uint UNZIP_LH_OFF_VERSION = 0;
-constexpr uint UNZIP_LH_OFF_GPFLAG = 2;
-constexpr uint UNZIP_LH_OFF_CMETHOD = 4;
-constexpr uint UNZIP_LH_OFF_MODT = 6;
-constexpr uint UNZIP_LH_OFF_MODD = 8;
-constexpr uint UNZIP_LH_OFF_CRC32 = 10;
-constexpr uint UNZIP_LH_OFF_CSIZE = 14;
-constexpr uint UNZIP_LH_OFF_USIZE = 18;
-constexpr uint UNZIP_LH_OFF_NAMELEN = 22;
-constexpr uint UNZIP_LH_OFF_XLEN = 24;
+static constexpr uint UNZIP_LH_OFF_VERSION = 0;
+static constexpr uint UNZIP_LH_OFF_GPFLAG = 2;
+static constexpr uint UNZIP_LH_OFF_CMETHOD = 4;
+static constexpr uint UNZIP_LH_OFF_MODT = 6;
+static constexpr uint UNZIP_LH_OFF_MODD = 8;
+static constexpr uint UNZIP_LH_OFF_CRC32 = 10;
+static constexpr uint UNZIP_LH_OFF_CSIZE = 14;
+static constexpr uint UNZIP_LH_OFF_USIZE = 18;
+static constexpr uint UNZIP_LH_OFF_NAMELEN = 22;
+static constexpr uint UNZIP_LH_OFF_XLEN = 24;
 
 // some offsets inside a data descriptor record
-constexpr uint UNZIP_DD_OFF_CRC32 = 0;
-constexpr uint UNZIP_DD_OFF_CSIZE = 4;
-constexpr uint UNZIP_DD_OFF_USIZE = 8;
+static constexpr uint UNZIP_DD_OFF_CRC32 = 0;
+static constexpr uint UNZIP_DD_OFF_CSIZE = 4;
+static constexpr uint UNZIP_DD_OFF_USIZE = 8;
 
 // some offsets inside a EOCD record
-constexpr uint UNZIP_EOCD_OFF_ENTRIES = 6;
-constexpr uint UNZIP_EOCD_OFF_CDOFF = 12;
-constexpr uint UNZIP_EOCD_OFF_COMMLEN = 16;
+static constexpr uint UNZIP_EOCD_OFF_ENTRIES = 6;
+static constexpr uint UNZIP_EOCD_OFF_CDOFF = 12;
+static constexpr uint UNZIP_EOCD_OFF_COMMLEN = 16;
 
 // max version handled by this
-constexpr uint UNZIP_VERSION = 0x14;
-constexpr uint ZIP_VERSION = 20;
+static constexpr uint UNZIP_VERSION = 0x14;
+static constexpr uint ZIP_VERSION = 20;
 
 static inline auto readUInt(const uchar* data) -> uint
 {

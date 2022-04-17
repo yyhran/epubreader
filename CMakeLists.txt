@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.20)
 
 project(Reader LANGUAGES C CXX
-        VERSION 0.2.5
+        VERSION 0.2.6
         DESCRIPTION "a simple epub-file reader"
         HOMEPAGE_URL "https://github.com/ang-ao/epubreader"
 )

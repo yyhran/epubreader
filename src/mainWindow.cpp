@@ -95,7 +95,7 @@ auto MainWindow::setBottomWidget(QMainWindow* viewWidget) -> void
     this->connect(this->_fontSlider, &FontSlider::valueChanged, this, [&](int value)
     {
         int size = this->_font.pointSize() * value / 100;
-        this->_epubView->setDocFont(QFont(this->_font.family(), size));
+        this->_epubView->getDocument()->setDefaultFont(QFont(this->_font.family(), size));
     });
 
     statusBar->addPermanentWidget(this->_fontSlider);
@@ -114,7 +114,7 @@ auto MainWindow::gotoFile(QTreeWidgetItem* item, int index) -> void
     int pos = file.indexOf("#");
     QString fileName = file.left(pos);
     QString filePos = pos == -1 ? "#" : file.mid(pos);
-    if(fileName != this->_epubView->getFile())
+    if(fileName != this->_epubView->getDocument()->openedFile())
     {
         this->_epubView->setFile(fileName);
     }
@@ -141,11 +141,11 @@ auto MainWindow::setToc() -> void
     this->_tocMap.clear();
     this->_font.cleanup();
 
-    this->_font = this->_epubView->getDocFont();
-    this->_metaInfo = this->_epubView->getMetaInfo();
+    this->_font = this->_epubView->getDocument()->getFont();
+    this->_metaInfo = this->_epubView->getDocument()->getMeta();
     this->_treeWidget->headerItem()->setText(0, this->_metaInfo["title"].toStdList().front());
 
-    auto tocData = this->_epubView->getToc();
+    auto tocData = this->_epubView->getDocument()->getToc();
     QMap<QString, QTreeWidgetItem*> tocMap;
     for(auto&& data : tocData)
     {
