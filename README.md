@@ -24,3 +24,12 @@ TODO:
 - 支持书库功能，通过记录 json 文件实现
 - 尽力修复 bug
 - 咕
+
+# 构建方式
+
+```shell
+git clone https://github.com/Ang-ao/epubreader.git
+cd epubreader
+cmake -B build
+cmake --build build -j4
+```
