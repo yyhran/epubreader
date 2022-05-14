@@ -97,27 +97,27 @@ static auto inflate(Bytef *dest, ulong* destLen, const Bytef* source, ulong sour
 }
 
 UnZipStream::UnZipStream(const QString& odtfile)
-    : _d(new QBuffer)
-    , _isOpen(false)    
+    : d_(new QBuffer)
+    , isOpen_(false)    
 {
     ErrorCode ec = ReadFailed;
     this->uBuffer = reinterpret_cast<unsigned char*>(this->buffer1);
-    if(this->_d->open(QIODevice::ReadWrite))
+    if(this->d_->open(QIODevice::ReadWrite))
     {
-        this->_isOpen = this->LoadFile(odtfile);
+        this->isOpen_ = this->LoadFile(odtfile);
         ec = this->seekToCentralDirectory();
         UNZIPDEBUG() << "error: " << ec;
         if(UnZipStream::OkFunky != ec)
         {
-            this->_isOpen = false;
+            this->isOpen_ = false;
         }
         if(0 == this->cdEntryCount)
         {
-            this->_isOpen = false;
+            this->isOpen_ = false;
         }
     }
 
-    if(not this->_isOpen)
+    if(not this->isOpen_)
     {
         this->clear();
     }
@@ -140,7 +140,7 @@ UnZipStream::UnZipStream(const QString& odtfile)
                 this->zipFiles << zfile;
                 if(chunk.size() > 0)
                 {
-                    this->_coreFileList.insert(zfile, chunk);
+                    this->coreFileList_.insert(zfile, chunk);
                     UNZIPDEBUG() << "content size() = " << chunk.size();
                 }
             }
@@ -154,8 +154,8 @@ UnZipStream::UnZipStream(const QString& odtfile)
 UnZipStream::~UnZipStream()
 {
     this->clear();
-    delete this->_d;
-    this->_d = Q_NULLPTR;
+    delete this->d_;
+    this->d_ = Q_NULLPTR;
 }
 
 auto UnZipStream::fileByte(const QString& fileName) -> QByteArray
@@ -360,7 +360,7 @@ auto UnZipStream::LoadFile(const QString& file) -> bool
         {
             if(f.open(QFile::ReadOnly))
             {
-                this->_d->write(f.readAll());
+                this->d_->write(f.readAll());
                 f.close();
                 this->start();
                 return true;
@@ -399,7 +399,7 @@ auto UnZipStream::getUShort(const unsigned char* data, quint32 offset) -> quint1
 
 auto UnZipStream::clear() -> bool
 {
-    this->_d->write(QByteArray());
+    this->d_->write(QByteArray());
     this->start();
-    return this->_d->bytesAvailable() == 0 ? true : false;
+    return this->d_->bytesAvailable() == 0 ? true : false;
 }

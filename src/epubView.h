@@ -19,15 +19,14 @@ public:
 
     auto loadFile(const QString& path) -> void;
     auto setPos(const QUrl& url) -> void;
-    auto setFile(const QString& fileName) -> void { this->_document->setFile(fileName); this->update(); }
-    auto getDocument() const -> Document* { return this->_document; }
+    auto setFile(const QString& fileName) -> void { this->document_->setFile(fileName); this->update(); }
+    auto getDocument() const -> Document* { return this->document_; }
 
 private slots:
     void gotoToc(const QUrl& url);
 
 private:
-    Document* _document;
-    int _offset;
+    Document* document_;
 };
 
 }

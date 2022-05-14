@@ -136,11 +136,11 @@ public:
         SkipAll
     };
 
-    auto device() const ->QIODevice* { return static_cast<QIODevice*>(this->_d);}
-    auto stream() const -> QByteArray { return this->_d->data(); }
-    auto canRead() const -> bool { return this->_isOpen; }
+    auto device() const ->QIODevice* { return static_cast<QIODevice*>(this->d_);}
+    auto stream() const -> QByteArray { return this->d_->data(); }
+    auto canRead() const -> bool { return this->isOpen_; }
     auto fileList() const -> QStringList { return this->zipFiles; }
-    auto listData() const -> CoreFileList { return this->_coreFileList; }
+    auto listData() const -> CoreFileList { return this->coreFileList_; }
 
 protected:
     char buffer1[UNZIP_READ_BUFFER];    
@@ -164,12 +164,12 @@ private:
 
     auto clear() -> bool;
     auto LoadFile(const QString& file) -> bool;
-    auto start() -> void { this->_d->seek(0);}
+    auto start() -> void { this->d_->seek(0);}
 
 private:
-    CoreFileList _coreFileList;
-    QBuffer* _d;
-    bool _isOpen;
+    CoreFileList coreFileList_;
+    QBuffer* d_;
+    bool isOpen_;
 };
 
 #endif // __UNZIP__H

@@ -42,11 +42,11 @@ public:
     Document(const QString& fileName, QObject* parent = Q_NULLPTR);
     ~Document();
 
-    auto opened() const -> bool { return this->_opened; }
-    auto openedFile() const -> QString { return this->_openedFile; }
+    auto opened() const -> bool { return this->opened_; }
+    auto openedFile() const -> QString { return this->openedFile_; }
     auto setFile(const QString& file) -> void;
-    auto getToc() const -> QList<EpubToc> { return this->_toc; }
-    auto getMeta() const -> MetaInfo { return this->_metaInfo; }
+    auto getToc() const -> QList<EpubToc> { return this->toc_; }
+    auto getMeta() const -> MetaInfo { return this->metaInfo_; }
     auto getFont() const -> QFont { return this->defaultFont(); }
 
 private:
@@ -59,21 +59,21 @@ private:
     auto saveFile(const QString& name, QByteArray& data) -> void;
 
 private:
-    DataMap _imageData;
-    DataMap _textData;
-    DataMap _styleData;
-    DataMap _metaData;
-    MetaInfo _metaInfo;
-    QList<EpubToc> _toc;
-    QString _coverImage;
-    QString _fileName;
-    QString _bookTitle;
-    QString _imgPath;
-    QString _baseRefDir;
-    QString _bookPath;
-    QString _openedFile;
-    bool _runOnRam;
-    bool _opened;
+    DataMap imageData_;
+    DataMap textData_;
+    DataMap styleData_;
+    DataMap metaData_;
+    MetaInfo metaInfo_;
+    QList<EpubToc> toc_;
+    QString coverImage_;
+    QString fileName_;
+    QString bookTitle_;
+    QString imgPath_;
+    QString baseRefDir_;
+    QString bookPath_;
+    QString openedFile_;
+    bool runOnRam_;
+    bool opened_;
 };
 
 } // namespace EPUB

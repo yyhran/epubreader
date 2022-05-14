@@ -12,6 +12,9 @@
 #include <QDockWidget>
 #include <QStatusBar>
 #include <QSlider>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 
 #include "epubView.h"
 #include "fontSlider.h"
@@ -31,23 +34,27 @@ private slots:
     void gotoStackedWidgetPage(int page = 0);
     void gotoFile(QTreeWidgetItem* item, int index);
 
+protected:
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent* event);
+
 private:
     auto initLayout() -> void;
     auto setMenu() -> void;
     auto setHomeWidge() -> void;
     auto setViewWidget() -> void;
     auto setBottomWidget(QMainWindow* viewWidget) -> void;
-
+    auto openFile(const QString& fileName) -> void;
     auto setToc() -> void;
 
 private:
-    QStackedWidget* _stackedWidget;
-    QTreeWidget* _treeWidget;
-    FontSlider* _fontSlider;
+    QStackedWidget* stackedWidget_;
+    QTreeWidget* treeWidget_;
+    FontSlider* fontSlider_;
     EPUB::EpubView* _epubView;
-    MetaInfo _metaInfo;
-    TocMap _tocMap;
-    QFont _font;
+    MetaInfo metaInfo_;
+    TocMap tocMap_;
+    QFont font_;
 };
 
 #endif // __MAIN_WINDOW__H

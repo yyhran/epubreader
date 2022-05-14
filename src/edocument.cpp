@@ -4,25 +4,25 @@ namespace EPUB {
 
 Document::Document(const QString& fileName, QObject* parent)
     : QTextDocument(parent)
-    , _fileName(fileName)
-    , _baseRefDir("")
-    , _openedFile("")
-    , _runOnRam(false)
-    , _opened(false)
+    , fileName_(fileName)
+    , baseRefDir_("")
+    , openedFile_("")
+    , runOnRam_(false)
+    , opened_(false)
 {
-    if(not this->_runOnRam)
+    if(not this->runOnRam_)
     {
         QFileInfo fileInfo(fileName);
         QString name = fileInfo.baseName();
-        this->_bookPath = QCoreApplication::applicationDirPath() + "/books/" + name + "/";
-        QDir dir(this->_bookPath);
-        if(not dir.exists()) dir.mkpath(this->_bookPath);
+        this->bookPath_ = QCoreApplication::applicationDirPath() + "/books/" + name + "/";
+        QDir dir(this->bookPath_);
+        if(not dir.exists()) dir.mkpath(this->bookPath_);
     }
     if(this->open())
     {
-        if("" != this->_coverImage)
+        if("" != this->coverImage_)
         {
-            this->setHtml(this->_coverImage);
+            this->setHtml(this->coverImage_);
         }
         else this->setFile("titlepage.xhtml");
     }
@@ -31,10 +31,10 @@ Document::Document(const QString& fileName, QObject* parent)
 
 Document::~Document()
 { 
-    if(not this->_runOnRam)
+    if(not this->runOnRam_)
     {
-        Q_ASSERT("" != this->_bookPath);
-        QDir dir(this->_bookPath);
+        Q_ASSERT("" != this->bookPath_);
+        QDir dir(this->bookPath_);
         if(dir.exists())
         {
             dir.removeRecursively();
@@ -44,7 +44,7 @@ Document::~Document()
 
 auto Document::open() -> bool
 {
-    UnZipStream* unZip = new UnZipStream(this->_fileName);
+    UnZipStream* unZip = new UnZipStream(this->fileName_);
 
     if(unZip->canRead())
     {
@@ -62,15 +62,15 @@ auto Document::open() -> bool
 
             if(QLatin1String("text/html") == mimeType or QLatin1String("application/xhtml+xml") == mimeType)
             {
-                this->_textData.insert(name, it.value());
+                this->textData_.insert(name, it.value());
             }
             else
             {
                 QFileInfo fileInfo(name);
                 if(QLatin1String("image/jpeg") == mimeType)
                 {
-                    if(name.contains("/")) this->_imgPath = this->_bookPath + name.left(name.lastIndexOf("/")) + "/";
-                    if(this->_runOnRam)
+                    if(name.contains("/")) this->imgPath_ = this->bookPath_ + name.left(name.lastIndexOf("/")) + "/";
+                    if(this->runOnRam_)
                     {
                         this->addResource(QTextDocument::ImageResource, QUrl("myData:/" + fileInfo.fileName()), data);
                     }
@@ -81,28 +81,28 @@ auto Document::open() -> bool
                 }
                 else 
                 {
-                    this->_metaData.insert(name, data);
+                    this->metaData_.insert(name, data);
                 }
-                if(not this->_runOnRam) this->saveFile(name, data);
+                if(not this->runOnRam_) this->saveFile(name, data);
             }
         }
     }
     delete unZip;
     unZip = nullptr;
 
-    for(auto it = this->_textData.begin(); it != this->_textData.end(); ++it)
+    for(auto it = this->textData_.begin(); it != this->textData_.end(); ++it)
     {
         this->changePath(it.key(), it.value());
     }
 
-    for(auto it = this->_metaData.begin(); it != this->_metaData.end(); ++it)
+    for(auto it = this->metaData_.begin(); it != this->metaData_.end(); ++it)
     {
         if("META-INF/container.xml" == it.key())
         {
             if(it.value().size() < 4) return false;
             if(this->metaReader(it.value()))
             {
-                this->_opened = true;
+                this->opened_ = true;
                 return true;
             }
         }
@@ -113,10 +113,10 @@ auto Document::open() -> bool
 
 auto Document::setFile(const QString& file) -> void
 {
-    this->_openedFile = file;
-    if(this->_runOnRam)
+    this->openedFile_ = file;
+    if(this->runOnRam_)
     {
-        for(auto it = this->_textData.begin(); it != this->_textData.end(); ++it)
+        for(auto it = this->textData_.begin(); it != this->textData_.end(); ++it)
         {
             if(it.key().contains(file))
             {
@@ -126,7 +126,7 @@ auto Document::setFile(const QString& file) -> void
     }
     else
     {
-        QFile f(this->_bookPath + file);
+        QFile f(this->bookPath_ + file);
         if(f.exists())
         {
             if(f.open(QIODevice::ReadWrite))
@@ -157,14 +157,14 @@ auto Document::metaReader(QByteArray& xml) -> bool
 {
     QString containerFile{"META-INF/container.xml"};
     bool ret{false};
-    QDomElement root = this->getDomElementFromXml(this->_metaData[containerFile], true);
+    QDomElement root = this->getDomElementFromXml(this->metaData_[containerFile], true);
     QDomNodeList der = root.elementsByTagName("rootfile");
     if(0 == der.count())
     {
         EPUBWARNING() << "unable to get place from file content.opf, inside META-INF/container.xml" << __LINE__;
         return ret;
     }
-    this->_metaData.remove(containerFile);
+    this->metaData_.remove(containerFile);
     QString contentFile{""};
 
     for(int i{0}; i < der.count(); ++i) 
@@ -181,7 +181,7 @@ auto Document::metaReader(QByteArray& xml) -> bool
 
     if(contentFile.contains("/"))
     {
-        this->_baseRefDir = contentFile.left(contentFile.lastIndexOf("/")) + "/";
+        this->baseRefDir_ = contentFile.left(contentFile.lastIndexOf("/")) + "/";
     }
 
     QDomNodeList metaList = this->getPageName(contentFile, QString("metadata"));
@@ -191,7 +191,7 @@ auto Document::metaReader(QByteArray& xml) -> bool
         QDomNode&& tmp = list.at(i);
         if("dc" == tmp.prefix())
         {
-            this->_metaInfo[tmp.localName()] << tmp.firstChild().toText().data();
+            this->metaInfo_[tmp.localName()] << tmp.firstChild().toText().data();
         }
     }
     // QDomNodeList guideList = this->getPageName(contentFile, QString("guide"));
@@ -209,20 +209,20 @@ auto Document::metaReader(QByteArray& xml) -> bool
         }
         if(attrId.contains("cover"))
         {
-            if(not this->_runOnRam)
+            if(not this->runOnRam_)
             {
                 if("image/jpeg" == nodepager.attribute("media-type"))
                 {
-                    this->_coverImage = "<img src=\"" + this->_bookPath + this->_baseRefDir + nodepager.attribute("href") +"\"/>";
+                    this->coverImage_ = "<img src=\"" + this->bookPath_ + this->baseRefDir_ + nodepager.attribute("href") +"\"/>";
                 }
                 else if("application/xhtml+xml" == nodepager.attribute("media-type"))
                 {
-                    QFile f(this->_bookPath + this->_baseRefDir + nodepager.attribute("href"));
+                    QFile f(this->bookPath_ + this->baseRefDir_ + nodepager.attribute("href"));
                     if(f.exists())
                     {
                         if(f.open(QIODevice::ReadOnly))
                         {
-                            this->_coverImage = f.readAll().toStdString().c_str();
+                            this->coverImage_ = f.readAll().toStdString().c_str();
                         }
                     }
                 }
@@ -236,7 +236,7 @@ auto Document::metaReader(QByteArray& xml) -> bool
     }
     else
     {
-        tocFile = this->_baseRefDir + tocFile;
+        tocFile = this->baseRefDir_ + tocFile;
     }
 
     EPUBDEBUG() << "get toc from  " << tocFile << __LINE__;
@@ -248,7 +248,7 @@ auto Document::metaReader(QByteArray& xml) -> bool
         QDomElement elem = navitom.at(0).toElement();
         ret = this->readMenu(elem);
     }
-    this->_metaData.remove(tocFile);
+    this->metaData_.remove(tocFile);
 
     return ret;
 }
@@ -265,8 +265,8 @@ auto Document::readMenu(const QDomElement& element, const QString& text) -> bool
             toc.order = child.attribute("playOrder").toInt();
             QDomElement tmp = child.firstChildElement();
             toc.text = tmp.firstChildElement().firstChild().toText().data();
-            toc.src = this->_baseRefDir + tmp.nextSiblingElement().attribute("src");
-            this->_toc.append(toc);
+            toc.src = this->baseRefDir_ + tmp.nextSiblingElement().attribute("src");
+            this->toc_.append(toc);
             this->readMenu(child, toc.text); // read submenu
         }
         child = child.nextSiblingElement();
@@ -287,7 +287,7 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
         if("text/css" == oldNode.attribute("type"))
         {
             QFileInfo fileInfo(oldNode.attribute("href"));
-            // QString path = (this->_runOnRam ? "myData:/" : this->_cssPath) + fileInfo.fileName();
+            // QString path = (this->runOnRam_ ? "myData:/" : this->_cssPath) + fileInfo.fileName();
             QString path = "myData:/" + fileInfo.fileName();
             oldNode.setAttribute("href", path); 
             QDomElement newNode = cssList.at(i).toElement();
@@ -300,7 +300,7 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
     {
         QDomElement oldNode = imgList.at(i).toElement();
         QFileInfo fileInfo(oldNode.attribute("src"));
-        QString path = (this->_runOnRam ? "myData:/" : this->_imgPath) + fileInfo.fileName();
+        QString path = (this->runOnRam_ ? "myData:/" : this->imgPath_) + fileInfo.fileName();
         oldNode.setAttribute("src", path);
         QDomElement newNode = imgList.at(i).toElement();
         imgList.at(i).replaceChild(newNode, oldNode); 
@@ -314,14 +314,14 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
         tmpDom.appendChild(tmpDom.importNode(svgNode, true));
 
         QFileInfo fileInfo(svgNode.elementsByTagName("image").at(0).toElement().attribute("xlink:href"));
-        QString path = (this->_runOnRam ? "myData:/" : this->_bookPath) + fileInfo.fileName();
+        QString path = (this->runOnRam_ ? "myData:/" : this->bookPath_) + fileInfo.fileName();
         QDomElement imagElement = document.createElement("img");
         imagElement.setAttribute("src", path);
         QDomNode parent = svgList.at(i).parentNode();
         parent.replaceChild(imagElement, svgNode);
     }
 
-    if(this->_runOnRam)
+    if(this->runOnRam_)
     {
         xml.clear();
         QTextStream out(xml);
@@ -329,7 +329,7 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
     }
     else
     {
-        QString savePath = this->_bookPath + name;
+        QString savePath = this->bookPath_ + name;
         QString dirPath = savePath.left(savePath.lastIndexOf("/")) + "/";
         QDir dir(dirPath);
         if(not dir.exists()) dir.mkpath(dirPath);
@@ -351,7 +351,7 @@ auto Document::getPageName(const QString fileName, const QString tag) -> QDomNod
 
     QDomNodeList defineterror;
 
-    QByteArray chunx = this->_metaData[fileName]; 
+    QByteArray chunx = this->metaData_[fileName]; 
     if(0 == chunx.size()) return defineterror;
 
     QDomElement e = this->getDomElementFromXml(chunx, true);
@@ -369,7 +369,7 @@ auto Document::getPageName(const QString fileName, const QString tag) -> QDomNod
 
 auto Document::saveFile(const QString& name, QByteArray& data) -> void
 {
-    QString savePath = this->_bookPath + name;
+    QString savePath = this->bookPath_ + name;
     QString dirPath = savePath.left(savePath.lastIndexOf("/")) + "/";
     QDir dir(dirPath);
     if(not dir.exists()) dir.mkpath(dirPath);

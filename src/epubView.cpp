@@ -4,23 +4,22 @@ namespace EPUB {
 
 EpubView::EpubView(QWidget* parent)
     : QTextBrowser(parent)
-    , _document(Q_NULLPTR)
-    , _offset(0)
+    , document_(Q_NULLPTR)
 {
     this->connect(this, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(gotoToc(const QUrl&)));
 }
 
 EpubView::~EpubView()
 {
-    delete this->_document;
+    delete this->document_;
 }
 
 auto EpubView::loadFile(const QString& path) -> void
 {
     Document* document = new Document(path, this);
     this->setDocument(document);
-    delete this->_document;
-    this->_document = document;
+    delete this->document_;
+    this->document_ = document;
 }
 
 auto EpubView::setPos(const QUrl& url) -> void
