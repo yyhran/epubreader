@@ -36,7 +36,12 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src
 )
 
-add_executable(${PROJECT_NAME})
+if(WIN32)
+    add_executable(${PROJECT_NAME} WIN32)
+else()
+    add_executable(${PROJECT_NAME})
+endif()
+
 
 # file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.cpp *.h)
 file(GLOB sources CONFIGURE_DEPENDS res/res.qrc src/*.cpp src/*.h)
