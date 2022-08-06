@@ -199,7 +199,7 @@ auto Document::metaReader(QByteArray& xml) -> bool
 
     QString tocFile{""};
     QDomNodeList itemlist = this->getPageName(contentFile, QString("item"));
-    for(int i{0}; i < itemlist.count(); ++i) 
+    for(int i{0}; i < itemlist.count(); ++i)
     {
         QDomElement nodepager = itemlist.at(i).toElement();
         QString attrId = nodepager.attribute("id");
@@ -343,7 +343,7 @@ auto Document::changePath(const QString& name, QByteArray& xml) -> void
     }
 }
 
-auto Document::getPageName(const QString fileName, const QString tag) -> QDomNodeList
+auto Document::getPageName(const QString& fileName, const QString& tag) -> QDomNodeList
 {
     EPUBDEBUG() << "Request GetPageName: file_name/tag" << fileName
                 << " : " << tag

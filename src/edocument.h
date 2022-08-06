@@ -55,7 +55,7 @@ private:
     auto metaReader(QByteArray& xml) -> bool;
     auto readMenu(const QDomElement& element, const QString& text = "") -> bool;
     auto changePath(const QString& name, QByteArray& xml) -> void;
-    auto getPageName(const QString fileName, const QString tag = "body") -> QDomNodeList;
+    auto getPageName(const QString& fileName, const QString& tag = "body") -> QDomNodeList;
     auto saveFile(const QString& name, QByteArray& data) -> void;
 
 private:
